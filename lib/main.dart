@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'splashScreen.dart';
+import 'SplashScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,6 +15,7 @@ class MyApp extends StatelessWidget {
       title: 'A Plus',
       theme: ThemeData(
         useMaterial3: true,
+        fontFamily: 'Tajawal',
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF1A2238),
           primary: const Color(0xFF1A2238),
