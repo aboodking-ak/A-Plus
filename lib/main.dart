@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'SplashScreen.dart';
+import 'SignUpScreen.dart';
+import 'SignInScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,7 +30,12 @@ class MyApp extends StatelessWidget {
           foregroundColor: Color(0xFFFFFFFF),
         ),
       ),
-      home: SplashScreen()
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SplashScreen(),
+        '/signup': (context) => const SignUpScreen(),
+        '/signin': (context) => const SignInScreen(),
+      },
     );
   }
 }

@@ -1,16 +1,13 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+class SignInScreen extends StatefulWidget {
+  const SignInScreen({super.key});
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  State<SignInScreen> createState() => _SignInScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
-  bool _agreeToTerms = false;
-
+class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -23,15 +20,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
         backgroundColor: Colors.white,
         body: Stack(
           children: [
-
             SafeArea(
               child: SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: Column(
                     children: [
-                      const SizedBox(height: 10), // تقليل المسافة العلوية
-                      // اللوجو مصغر أكثر
+                      const SizedBox(height: 20),
+                      // اللوجو
                       Center(
                         child: Stack(
                           alignment: Alignment.center,
@@ -63,60 +59,34 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        "إنشاء حساب جديد",
+                        "تسجيل الدخول",
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryColor),
                       ),
                       Text(
-                        "ابدأ رحلتك التعليمية معنا",
+                        "مرحباً بك مجدداً في رحلتك التعليمية",
                         style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                       ),
-                      const SizedBox(height: 15),
+                      const SizedBox(height: 30),
 
-                      // حقول الإدخال مصغرة جداً (الارتفاع 38)
-                      _buildTextField("الاسم الكامل", Icons.person_outline),
-                      const SizedBox(height: 8),
+                      // حقول الإدخال
                       _buildTextField("البريد الإلكتروني", Icons.email_outlined),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
                       _buildTextField("كلمة المرور", Icons.lock_outline, isPassword: true),
-                      const SizedBox(height: 8),
-                      _buildTextField("تأكيد كلمة المرور", Icons.lock_outline, isPassword: true),
 
-                      const SizedBox(height: 8),
-                      // شروط الاستخدام
-                      Row(
-                        children: [
-                          SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: Checkbox(
-                              value: _agreeToTerms,
-                              activeColor: secondaryColor,
-                              onChanged: (v) => setState(() => _agreeToTerms = v!),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text.rich(
-                              TextSpan(
-                                text: "أوافق على ",
-                                style: const TextStyle(fontSize: 11),
-                                children: [
-                                  TextSpan(text: "الشروط والأحكام", style: TextStyle(color: secondaryColor, fontWeight: FontWeight.bold)),
-                                  const TextSpan(text: " و "),
-                                  TextSpan(text: "سياسة الخصوصية", style: TextStyle(color: secondaryColor, fontWeight: FontWeight.bold)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "نسيت كلمة المرور؟",
+                          style: TextStyle(color: secondaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
                       ),
 
-                      const SizedBox(height: 15),
-                      // زر إنشاء الحساب مصغر
+                      const SizedBox(height: 25),
+                      // زر تسجيل الدخول
                       SizedBox(
                         width: double.infinity,
-                        height: 40,
+                        height: 45,
                         child: ElevatedButton(
                           onPressed: () {},
                           style: ElevatedButton.styleFrom(
@@ -124,11 +94,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             elevation: 0,
                           ),
-                          child: const Text("إنشاء حساب", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                          child: const Text("تسجيل الدخول", style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
                         ),
                       ),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 20),
                       // فاصل "أو"
                       Row(
                         children: [
@@ -141,8 +111,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ],
                       ),
 
-                      const SizedBox(height: 12),
-                      // أزرار جوجل وفيسبوك مصغرة
+                      const SizedBox(height: 20),
+                      // أزرار جوجل وفيسبوك
                       Row(
                         children: [
                           Expanded(child: _buildSocialButton("Google", "assets/icons/google.png")),
@@ -151,21 +121,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ],
                       ),
 
-                      const SizedBox(height: 20,), // استبدال Spacer بمسافة ثابتة
+                      const SizedBox(height: 40),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text("لديك حساب بالفعل؟ ", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                          Text("ليس لديك حساب؟ ", style: TextStyle(color: Colors.grey[600], fontSize: 13)),
                           GestureDetector(
-                            onTap: () => Navigator.pushReplacementNamed(context, '/signin'),
+                            onTap: () => Navigator.pushReplacementNamed(context, '/signup'),
                             child: Text(
-                              "تسجيل الدخول",
-                              style: TextStyle(color: secondaryColor, fontWeight: FontWeight.bold, fontSize: 12),
+                              "إنشاء حساب جديد",
+                              style: TextStyle(color: secondaryColor, fontWeight: FontWeight.bold, fontSize: 13),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 15),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
@@ -179,10 +149,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Widget _buildTextField(String hint, IconData icon, {bool isPassword = false}) {
     return Container(
-      height: 45, // تم تصغير الارتفاع أكثر
+      height: 48,
       decoration: BoxDecoration(
         color: const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0xFFF1F3F5)),
       ),
       child: TextField(
@@ -191,10 +161,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-          prefixIcon: Icon(icon, color: Colors.grey[400], size: 18),
-          suffixIcon: isPassword ? Icon(Icons.lock_outline, color: Colors.grey[400], size: 16) : null,
+          prefixIcon: Icon(icon, color: Colors.grey[400], size: 20),
+          suffixIcon: isPassword ? Icon(Icons.lock_outline, color: Colors.grey[400], size: 18) : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
         ),
       ),
     );
