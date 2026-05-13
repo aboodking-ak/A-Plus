@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'SplashScreen.dart';
 import 'SignUpScreen.dart';
 import 'SignInScreen.dart';
+import 'StagesScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const SplashScreen(),
         '/signup': (context) => const SignUpScreen(),
         '/signin': (context) => const SignInScreen(),
+        '/stages': (context) => const StagesScreen(),
       },
     );
   }

@@ -118,7 +118,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         width: double.infinity,
                         height: 40,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () => Navigator.pushReplacementNamed(context, '/stages'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

@@ -75,7 +75,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
                       const SizedBox(height: 10),
                       Align(
-                        alignment: Alignment.centerLeft,
+                        alignment: Alignment.centerRight,
                         child: Text(
                           "نسيت كلمة المرور؟",
                           style: TextStyle(color: secondaryColor, fontSize: 12, fontWeight: FontWeight.bold),
@@ -88,7 +88,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         width: double.infinity,
                         height: 45,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () => Navigator.pushReplacementNamed(context, '/stages'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
