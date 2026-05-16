@@ -3,6 +3,7 @@ import 'SplashScreen.dart';
 import 'SignUpScreen.dart';
 import 'SignInScreen.dart';
 import 'StagesScreen.dart';
+import 'HomePageScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,6 +38,7 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignUpScreen(),
         '/signin': (context) => const SignInScreen(),
         '/stages': (context) => const StagesScreen(),
+        '/home': (context) => const HomePageScreen(),
       },
     );
   }

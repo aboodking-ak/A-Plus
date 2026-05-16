@@ -12,14 +12,70 @@ class _StagesScreenState extends State<StagesScreen> {
 
   final List<Map<String, String>> stages = [
     {'label': 'سادس علمي', 'icon': 'assets/icons/sixth_scientific.png'},
-    {'label': 'جامعة', 'icon': 'assets/icons/university.png'},
-    {'label': 'خامس علمي', 'icon': 'assets/icons/fifth_scientific.png'},
     {'label': 'سادس أدبي', 'icon': 'assets/icons/sixth_literary.png'},
-    {'label': 'رابع علمي', 'icon': 'assets/icons/fourth_scientific.png'},
+    {'label': 'خامس علمي', 'icon': 'assets/icons/fifth_scientific.png'},
     {'label': 'خامس أدبي', 'icon': 'assets/icons/fifth_literary.png'},
-    {'label': 'ثالث', 'icon': 'assets/icons/third.png'},
+    {'label': 'رابع علمي', 'icon': 'assets/icons/fourth_scientific.png'},
     {'label': 'رابع أدبي', 'icon': 'assets/icons/fourth_literary.png'},
+    {'label': 'ثالث متوسط', 'icon': 'assets/icons/third.png'},
   ];
+
+  Widget _buildStageCard(Map<String, String> stage, bool isSelected, {bool isFullWidth = false}) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final secondaryColor = theme.colorScheme.secondary;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedStage = stage['label'];
+        });
+      },
+      child: Container(
+        height: isFullWidth ? 70 : null, // تحديد ارتفاع للبطاقة العريضة
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? secondaryColor : Colors.grey[100]!,
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  stage['label']!,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? primaryColor : Colors.grey[700],
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Image.asset(
+                stage['icon']!,
+                height: 35,
+                width: 35,
+                errorBuilder: (c, e, s) => Icon(Icons.book, color: primaryColor),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,68 +172,35 @@ class _StagesScreenState extends State<StagesScreen> {
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: GridView.builder(
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 2.2,
-                          crossAxisSpacing: 15,
-                          mainAxisSpacing: 15,
-                        ),
-                        itemCount: stages.length,
-                        itemBuilder: (context, index) {
-                          final stage = stages[index];
-                          final isSelected = selectedStage == stage['label'];
-
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedStage = stage['label'];
-                              });
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected ? secondaryColor : Colors.grey[100]!,
-                                  width: isSelected ? 2 : 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.02),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        stage['label']!,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                          color: isSelected ? primaryColor : Colors.grey[700],
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    Image.asset(
-                                      stage['icon']!,
-                                      height: 35,
-                                      width: 35,
-                                      errorBuilder: (c, e, s) => Icon(Icons.book, color: primaryColor),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                      child: CustomScrollView(
+                        slivers: [
+                          SliverGrid(
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 2.2,
+                              crossAxisSpacing: 15,
+                              mainAxisSpacing: 15,
                             ),
-                          );
-                        },
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                if (index >= 6) return null; // أول 6 عناصر فقط (علمي وأدبي)
+                                final stage = stages[index];
+                                final isSelected = selectedStage == stage['label'];
+
+                                return _buildStageCard(stage, isSelected);
+                              },
+                              childCount: 6,
+                            ),
+                          ),
+                          const SliverToBoxAdapter(child: SizedBox(height: 15)),
+                          SliverToBoxAdapter(
+                            child: _buildStageCard(
+                              stages[6], // الثالث متوسط
+                              selectedStage == stages[6]['label'],
+                              isFullWidth: true,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -190,7 +213,11 @@ class _StagesScreenState extends State<StagesScreen> {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: selectedStage == null ? null : () {
-                          // الانتقال للصفحة التالية
+                          Navigator.pushReplacementNamed(
+                            context, 
+                            '/home', 
+                            arguments: selectedStage
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryColor,
