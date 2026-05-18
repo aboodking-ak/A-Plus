@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'SplashScreen.dart';
-import 'SignUpScreen.dart';
-import 'SignInScreen.dart';
-import 'StagesScreen.dart';
-import 'HomePageScreen.dart';
+import 'core/theme/app_theme.dart';
+import 'screens/splash/SplashScreen.dart';
+import 'screens/auth/SignUpScreen.dart';
+import 'screens/auth/SignInScreen.dart';
+import 'screens/stages/StagesScreen.dart';
+import 'screens/home/HomePageScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,21 +18,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'A Plus',
-      theme: ThemeData(
-        useMaterial3: true,
-        fontFamily: 'Tajawal',
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1A2238),
-          primary: const Color(0xFF1A2238),
-          secondary: const Color(0xFFF5B82E),
-          surface: const Color(0xFFFFFFFF),
-        ),
-        scaffoldBackgroundColor: const Color(0xFFFFFFFF),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1A2238),
-          foregroundColor: Color(0xFFFFFFFF),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
