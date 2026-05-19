@@ -29,7 +29,8 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void dispose() {
     // إعادة إظهار شريط الإشعارات عند الخروج من الشاشة
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: SystemUiOverlay.values);
     super.dispose();
   }
 

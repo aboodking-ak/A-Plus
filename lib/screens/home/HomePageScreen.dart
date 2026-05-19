@@ -18,6 +18,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: SystemUiOverlay.values);
     _startCountdown();
   }
 
@@ -56,14 +58,58 @@ class _HomePageScreenState extends State<HomePageScreen> {
     },
   ];
 
-  final List<Map<String, String>> subjects = [
-    {'label': 'عربية', 'icon': 'assets/icons/subjects/arabic.png'},
-    {'label': 'إسلامية', 'icon': 'assets/icons/subjects/islamic.png'},
-    {'label': 'رياضيات', 'icon': 'assets/icons/subjects/math.png'},
-    {'label': 'إنكليزي', 'icon': 'assets/icons/subjects/english.png'},
-    {'label': 'كيمياء', 'icon': 'assets/icons/subjects/chemistry.png'},
-    {'label': 'أحياء', 'icon': 'assets/icons/subjects/biology.png'},
-    {'label': 'فيزياء', 'icon': 'assets/icons/subjects/physics.png'},
+  final List<Map<String, dynamic>> subjects = [
+    {
+      'label': 'الإسلامية',
+      'icon': AppAssets.islamic,
+      'pdfs': [
+        {'title': 'الكتاب', 'path': AppAssets.islamicPdf}
+      ]
+    },
+    {
+      'label': 'العربية',
+      'icon': AppAssets.arabic,
+      'pdfs': [
+        {'title': 'الكتاب - الجزء الأول', 'path': AppAssets.arabicP1Pdf},
+        {'title': 'الكتاب - الجزء الثاني', 'path': AppAssets.arabicP2Pdf},
+      ]
+    },
+    {
+      'label': 'الإنكليزي',
+      'icon': AppAssets.english,
+      'pdfs': [
+        {'title': 'الكتاب - كتاب الطالب', 'path': AppAssets.englishStudentPdf},
+        {'title': 'الكتاب - كتاب النشاط', 'path': AppAssets.englishActivityPdf},
+      ]
+    },
+    {
+      'label': 'الرياضيات',
+      'icon': AppAssets.math,
+      'pdfs': [
+        {'title': 'الكتاب', 'path': AppAssets.mathPdf}
+      ]
+    },
+    {
+      'label': 'الأحياء',
+      'icon': AppAssets.biology,
+      'pdfs': [
+        {'title': 'الكتاب', 'path': AppAssets.biologyPdf}
+      ]
+    },
+    {
+      'label': 'الكيمياء',
+      'icon': AppAssets.chemistry,
+      'pdfs': [
+        {'title': 'الكتاب', 'path': AppAssets.chemistryPdf}
+      ]
+    },
+    {
+      'label': 'الفيزياء',
+      'icon': AppAssets.physics,
+      'pdfs': [
+        {'title': 'الكتاب', 'path': AppAssets.physicsPdf}
+      ]
+    },
   ];
 
   @override
@@ -685,9 +731,12 @@ class _HomePageScreenState extends State<HomePageScreen> {
     );
   }
 
-  void _showSubjectDetails(BuildContext context, Map<String, String> subject) {
+  void _showSubjectDetails(BuildContext context, Map<String, dynamic> subject) {
     final primaryColor = Theme.of(context).colorScheme.primary;
     final secondaryColor = Theme.of(context).colorScheme.secondary;
+    final List<Map<String, String>> pdfs =
+        List<Map<String, String>>.from(subject['pdfs']);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -710,25 +759,53 @@ class _HomePageScreenState extends State<HomePageScreen> {
                       borderRadius: BorderRadius.circular(10))),
               const SizedBox(height: 25),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                          color: secondaryColor.withAlpha(30),
-                          borderRadius: BorderRadius.circular(15)),
-                      child: Image.asset(subject['icon']!, height: 40)),
-                  const SizedBox(width: 15),
-                  Text("مادة ${subject['label']}",
-                      style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: primaryColor)),
+                  Text(
+                    subject['label']!,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
+                  Image.asset(
+                    subject['icon']!,
+                    height: 45,
+                    errorBuilder: (c, e, s) => Icon(
+                      Icons.book,
+                      color: secondaryColor,
+                      size: 35,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 30),
-              _buildBottomSheetItem("كتاب المنهج", Icons.menu_book_rounded, primaryColor),
-              _buildBottomSheetItem("اسئلة المادة", Icons.quiz_rounded, primaryColor),
-              _buildBottomSheetItem("وزاريات المادة", Icons.assignment_rounded, primaryColor),
+              ...pdfs.map((pdf) {
+                return _buildBottomSheetItem(
+                  pdf['title']!,
+                  Icons.menu_book_rounded,
+                  primaryColor,
+                  onTap: () {
+                    Navigator.pop(context);
+                    // إذا كانت المادة تحتوي على أكثر من ملف، نظهر العنوان التفصيلي
+                    String displayTitle = subject['label']!;
+                    if (pdfs.length > 1) {
+                      displayTitle = pdf['title']!.replaceAll("الكتاب - ", "");
+                      displayTitle = "${subject['label']} - $displayTitle";
+                    }
+
+                    Navigator.pushNamed(
+                      context,
+                      '/pdf_viewer',
+                      arguments: {
+                        'title': displayTitle,
+                        'pdfPath': pdf['path'],
+                      },
+                    );
+                  },
+                );
+              }),
               const SizedBox(height: 20),
             ],
           ),
@@ -737,7 +814,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
     );
   }
 
-  Widget _buildBottomSheetItem(String title, IconData icon, Color color) {
+  Widget _buildBottomSheetItem(String title, IconData icon, Color color,
+      {VoidCallback? onTap}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       decoration: BoxDecoration(
@@ -745,7 +823,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: Colors.grey[100]!)),
       child: ListTile(
-        onTap: () => Navigator.pop(context),
+        onTap: onTap ?? () => Navigator.pop(context),
         leading: CircleAvatar(
             backgroundColor: color.withAlpha(20),
             child: Icon(icon, color: color, size: 24)),
@@ -820,53 +898,56 @@ class _HomePageScreenState extends State<HomePageScreen> {
     );
   }
 
-  Widget _buildSubjectCard(Map<String, String> subject) {
+  Widget _buildSubjectCard(Map<String, dynamic> subject) {
     final primaryColor = Theme.of(context).colorScheme.primary;
     final secondaryColor = Theme.of(context).colorScheme.secondary;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(50),
-            blurRadius: 10,
-            offset: const Offset(0, 0),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 15),
-              child: Text(
-                subject['label']!,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: primaryColor,
+    return GestureDetector(
+      onTap: () => _showSubjectDetails(context, subject),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(50),
+              blurRadius: 10,
+              offset: const Offset(0, 0),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 15),
+                child: Text(
+                  subject['label']!,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
+                  textAlign: TextAlign.right,
                 ),
-                textAlign: TextAlign.right,
               ),
             ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Image.asset(
-              subject['icon']!,
-              height: 45,
-              errorBuilder: (c, e, s) => Icon(
-                Icons.book,
-                color: secondaryColor,
-                size: 30,
+            Expanded(
+              flex: 1,
+              child: Image.asset(
+                subject['icon']!,
+                height: 45,
+                errorBuilder: (c, e, s) => Icon(
+                  Icons.book,
+                  color: secondaryColor,
+                  size: 30,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

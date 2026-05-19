@@ -23,4 +23,15 @@ class AppAssets {
   static const String chemistry = 'assets/icons/subjects/chemistry.png';
   static const String biology = 'assets/icons/subjects/biology.png';
   static const String physics = 'assets/icons/subjects/physics.png';
+
+  // Subjects PDFs
+  static const String arabicP1Pdf = 'assets/pdfs/subjects/arabic_p1.pdf';
+  static const String arabicP2Pdf = 'assets/pdfs/subjects/arabic_p2.pdf';
+  static const String islamicPdf = 'assets/pdfs/subjects/islamic.pdf';
+  static const String mathPdf = 'assets/pdfs/subjects/math.pdf';
+  static const String englishStudentPdf = 'assets/pdfs/subjects/english_student.pdf';
+  static const String englishActivityPdf = 'assets/pdfs/subjects/english_activity.pdf';
+  static const String chemistryPdf = 'assets/pdfs/subjects/chemistry.pdf';
+  static const String biologyPdf = 'assets/pdfs/subjects/biology.pdf';
+  static const String physicsPdf = 'assets/pdfs/subjects/physics.pdf';
 }
