@@ -10,6 +10,7 @@ import 'screens/exams/ExamsScreen.dart';
 import 'ministerials/ministerialsScreen.dart';
 import 'screens/islamic/SurahScreen.dart';
 import 'screens/english/EssaysScreen.dart';
+import 'screens/biology/BiologyDiagramsScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -58,6 +59,7 @@ class MyApp extends StatelessWidget {
         },
         '/surahs': (context) => const SurahScreen(),
         '/essays': (context) => const EssaysScreen(),
+        '/biology_diagrams': (context) => const BiologyDiagramsScreen(),
       },
     );
   }

@@ -900,6 +900,17 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     Navigator.pushNamed(context, '/essays');
                   },
                 ),
+              // قسم رسومات الأحياء (فقط لمادة الأحياء)
+              if (subject['label'] == 'الأحياء')
+                _buildBottomSheetItem(
+                  "رسومات الأحياء",
+                  Icons.image_search_rounded,
+                  primaryColor,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/biology_diagrams');
+                  },
+                ),
               const SizedBox(height: 20),
             ],
           ),
