@@ -7,6 +7,7 @@ import 'screens/stages/StagesScreen.dart';
 import 'screens/home/HomePageScreen.dart';
 import 'screens/pdf/pdf_viewer_screen.dart';
 import 'screens/exams/ExamsScreen.dart';
+import 'ministerials/ministerialsScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -44,6 +45,12 @@ class MyApp extends StatelessWidget {
         '/exams': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
           return ExamsScreen(
+            subjectName: args['subjectName'],
+          );
+        },
+        '/ministerials': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return MinisterialsScreen(
             subjectName: args['subjectName'],
           );
         },

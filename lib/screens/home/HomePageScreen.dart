@@ -850,12 +850,28 @@ class _HomePageScreenState extends State<HomePageScreen> {
               _buildBottomSheetItem(
                 "الاختبارات",
                 Icons.assignment_turned_in_rounded,
-                secondaryColor,
+                primaryColor,
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(
                     context,
                     '/exams',
+                    arguments: {
+                      'subjectName': subject['label'],
+                    },
+                  );
+                },
+              ),
+              // زر الوزاريات الثابت
+              _buildBottomSheetItem(
+                "الوزاريات",
+                Icons.account_balance_rounded,
+                primaryColor, // جعل لونه نفس لون الكتاب (primary)
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(
+                    context,
+                    '/ministerials',
                     arguments: {
                       'subjectName': subject['label'],
                     },
