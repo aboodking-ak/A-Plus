@@ -889,6 +889,17 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     Navigator.pushNamed(context, '/surahs');
                   },
                 ),
+              // قسم الإنشاءات (فقط لمادة الإنكليزي)
+              if (subject['label'] == 'الإنكليزي')
+                _buildBottomSheetItem(
+                  "الإنشاءات",
+                  Icons.edit_note_rounded,
+                  primaryColor,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/essays');
+                  },
+                ),
               const SizedBox(height: 20),
             ],
           ),
