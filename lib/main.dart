@@ -8,6 +8,7 @@ import 'screens/home/HomePageScreen.dart';
 import 'screens/pdf/pdf_viewer_screen.dart';
 import 'screens/exams/ExamsScreen.dart';
 import 'ministerials/ministerialsScreen.dart';
+import 'screens/islamic/SurahScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -54,6 +55,7 @@ class MyApp extends StatelessWidget {
             subjectName: args['subjectName'],
           );
         },
+        '/surahs': (context) => const SurahScreen(),
       },
     );
   }

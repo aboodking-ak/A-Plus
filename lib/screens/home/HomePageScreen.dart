@@ -878,6 +878,17 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   );
                 },
               ),
+              // قسم سور الحفظ (فقط لمادة الإسلامية)
+              if (subject['label'] == 'الإسلامية')
+                _buildBottomSheetItem(
+                  "سور الحفظ",
+                  Icons.menu_book_outlined,
+                  primaryColor,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/surahs');
+                  },
+                ),
               const SizedBox(height: 20),
             ],
           ),
