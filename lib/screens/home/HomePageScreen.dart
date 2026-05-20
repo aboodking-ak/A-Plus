@@ -127,19 +127,20 @@ class _HomePageScreenState extends State<HomePageScreen> {
         child: Scaffold(
           backgroundColor: Colors.white,
           appBar: AppBar(
-            toolbarHeight: 90,
+            toolbarHeight: 80,
             backgroundColor: primaryColor,
-            elevation: 0,
+            elevation: 12,
+            shadowColor: primaryColor.withAlpha(120),
             centerTitle: false,
+            systemOverlayStyle: SystemUiOverlayStyle.light,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
+                bottomLeft: Radius.circular(35),
+                bottomRight: Radius.circular(35),
               ),
             ),
-            systemOverlayStyle: SystemUiOverlayStyle.light,
             title: Padding(
-              padding: const EdgeInsets.only(top: 15),
+              padding: const EdgeInsets.only(top: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -148,21 +149,36 @@ class _HomePageScreenState extends State<HomePageScreen> {
                 ],
               ),
             ),
-            bottom: TabBar(
-              dividerColor: Colors.transparent,
-              indicatorColor: secondaryColor,
-              indicatorSize: TabBarIndicatorSize.label,
-              indicatorWeight: 3,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white60,
-              tabs: const [
-                Tab(icon: Icon(Icons.home_rounded, size: 24)),
-                Tab(icon: Icon(Icons.auto_awesome_rounded, size: 24)),
-                Tab(icon: Icon(Icons.handyman_rounded, size: 24)),
-                Tab(icon: Icon(Icons.notifications_none_rounded, size: 24)),
-                Tab(icon: Icon(Icons.emoji_events_rounded, size: 24)),
-                Tab(icon: Icon(Icons.person_outline_rounded, size: 24)),
-              ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(70),
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(30),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withAlpha(40), width: 1),
+                ),
+                child: TabBar(
+                  dividerColor: Colors.transparent,
+                  indicatorColor: secondaryColor,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  indicatorWeight: 4,
+                  labelColor: secondaryColor,
+                  unselectedLabelColor: Colors.white70,
+                  indicator: UnderlineTabIndicator(
+                    borderSide: BorderSide(width: 4.0, color: secondaryColor),
+                    insets: const EdgeInsets.symmetric(horizontal: 16.0),
+                  ),
+                  tabs: const [
+                    Tab(icon: Icon(Icons.home_rounded, size: 26)),
+                    Tab(icon: Icon(Icons.auto_awesome_rounded, size: 26)),
+                    Tab(icon: Icon(Icons.handyman_rounded, size: 26)),
+                    Tab(icon: Icon(Icons.notifications_none_rounded, size: 26)),
+                    Tab(icon: Icon(Icons.emoji_events_rounded, size: 26)),
+                    Tab(icon: Icon(Icons.person_outline_rounded, size: 26)),
+                  ],
+                ),
+              ),
             ),
           ),
           body: TabBarView(
