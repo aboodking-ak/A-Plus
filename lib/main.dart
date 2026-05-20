@@ -6,6 +6,7 @@ import 'screens/auth/SignInScreen.dart';
 import 'screens/stages/StagesScreen.dart';
 import 'screens/home/HomePageScreen.dart';
 import 'screens/pdf/pdf_viewer_screen.dart';
+import 'screens/exams/ExamsScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -38,6 +39,12 @@ class MyApp extends StatelessWidget {
           return PdfViewerScreen(
             title: args['title'],
             pdfPath: args['pdfPath'],
+          );
+        },
+        '/exams': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return ExamsScreen(
+            subjectName: args['subjectName'],
           );
         },
       },

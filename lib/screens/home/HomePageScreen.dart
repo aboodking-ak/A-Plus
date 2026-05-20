@@ -14,7 +14,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
   // منطق العد التنازلي
   late Timer _timer;
   Duration _timeLeft = const Duration(days: 45, hours: 12, minutes: 30);
-
+  var a = 1;
   @override
   void initState() {
     super.initState();
@@ -64,6 +64,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
       'icon': AppAssets.islamic,
       'pdfs': [
         {'title': 'الكتاب', 'path': AppAssets.islamicPdf}
+      ],
+      'exams': [
+        {'title': 'اختبار شامل - الفصل الأول'},
+        {'title': 'اختبار شامل - الفصل الثاني'},
       ]
     },
     {
@@ -72,6 +76,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
       'pdfs': [
         {'title': 'الكتاب - الجزء الأول', 'path': AppAssets.arabicP1Pdf},
         {'title': 'الكتاب - الجزء الثاني', 'path': AppAssets.arabicP2Pdf},
+      ],
+      'exams': [
+        {'title': 'اختبار الأدب - الفصل الأول'},
+        {'title': 'اختبار القواعد - الفصل الأول'},
       ]
     },
     {
@@ -80,6 +88,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
       'pdfs': [
         {'title': 'الكتاب - كتاب الطالب', 'path': AppAssets.englishStudentPdf},
         {'title': 'الكتاب - كتاب النشاط', 'path': AppAssets.englishActivityPdf},
+      ],
+      'exams': [
+        {'title': 'اختبار مفردات - Unit 1'},
+        {'title': 'اختبار قواعد - Unit 1'},
       ]
     },
     {
@@ -87,6 +99,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
       'icon': AppAssets.math,
       'pdfs': [
         {'title': 'الكتاب', 'path': AppAssets.mathPdf}
+      ],
+      'exams': [
+        {'title': 'اختبار الأعداد المركبة'},
+        {'title': 'اختبار القطوع المخروطية'},
       ]
     },
     {
@@ -94,6 +110,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
       'icon': AppAssets.biology,
       'pdfs': [
         {'title': 'الكتاب', 'path': AppAssets.biologyPdf}
+      ],
+      'exams': [
+        {'title': 'اختبار الخلية'},
+        {'title': 'اختبار الأنسجة'},
       ]
     },
     {
@@ -101,6 +121,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
       'icon': AppAssets.chemistry,
       'pdfs': [
         {'title': 'الكتاب', 'path': AppAssets.chemistryPdf}
+      ],
+      'exams': [
+        {'title': 'اختبار الثرموداينمك'},
+        {'title': 'اختبار الاتزان الكيميائي'},
       ]
     },
     {
@@ -108,6 +132,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
       'icon': AppAssets.physics,
       'pdfs': [
         {'title': 'الكتاب', 'path': AppAssets.physicsPdf}
+      ],
+      'exams': [
+        {'title': 'اختبار المتسعات'},
+        {'title': 'اختبار الحث الكهرومغناطيسي'},
       ]
     },
   ];
@@ -752,6 +780,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
     final secondaryColor = Theme.of(context).colorScheme.secondary;
     final List<Map<String, String>> pdfs =
         List<Map<String, String>>.from(subject['pdfs']);
+    final List<Map<String, String>> exams =
+        List<Map<String, String>>.from(subject['exams'] ?? []);
 
     showModalBottomSheet(
       context: context,
@@ -797,6 +827,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                 ],
               ),
               const SizedBox(height: 30),
+              // عرض الكتب (سواء كتاب واحد أو أجزاء)
               ...pdfs.map((pdf) {
                 return _buildBottomSheetItem(
                   pdf['title']!,
@@ -804,29 +835,58 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   primaryColor,
                   onTap: () {
                     Navigator.pop(context);
-                    // إذا كانت المادة تحتوي على أكثر من ملف، نظهر العنوان التفصيلي
-                    String displayTitle = subject['label']!;
-                    if (pdfs.length > 1) {
-                      displayTitle = pdf['title']!.replaceAll("الكتاب - ", "");
-                      displayTitle = "${subject['label']} - $displayTitle";
-                    }
-
                     Navigator.pushNamed(
                       context,
                       '/pdf_viewer',
                       arguments: {
-                        'title': displayTitle,
+                        'title': pdf['title'],
                         'pdfPath': pdf['path'],
                       },
                     );
                   },
                 );
               }),
+              // زر الاختبارات الثابت
+              _buildBottomSheetItem(
+                "الاختبارات",
+                Icons.assignment_turned_in_rounded,
+                secondaryColor,
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(
+                    context,
+                    '/exams',
+                    arguments: {
+                      'subjectName': subject['label'],
+                    },
+                  );
+                },
+              ),
               const SizedBox(height: 20),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSubHeader(String title, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Colors.grey[600]),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
