@@ -12,6 +12,7 @@ import 'screens/islamic/SurahScreen.dart';
 import 'screens/english/EssaysScreen.dart';
 import 'screens/biology/BiologyDiagramsScreen.dart';
 import 'screens/tools/CountdownScreen.dart';
+import 'screens/tools/NotesScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -62,6 +63,7 @@ class MyApp extends StatelessWidget {
         '/essays': (context) => const EssaysScreen(),
         '/biology_diagrams': (context) => const BiologyDiagramsScreen(),
         '/countdown': (context) => const CountdownScreen(),
+        '/notes': (context) => const NotesScreen(),
       },
     );
   }

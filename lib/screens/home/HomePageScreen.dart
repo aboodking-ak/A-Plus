@@ -553,7 +553,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     primaryColor: primaryColor,
                     secondaryColor: secondaryColor),
                 _buildToolListItem(
-                    label: 'مذكرة المذاكرة',
+                    label: 'ملاحظات',
                     icon: Icons.note_alt_rounded,
                     primaryColor: primaryColor,
                     secondaryColor: secondaryColor),
@@ -1091,6 +1091,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
           onTap: () {
             if (label == 'العد التنازلي') {
               Navigator.pushNamed(context, '/countdown');
+            } else if (label == 'ملاحظات') {
+              Navigator.pushNamed(context, '/notes');
             }
           },
           child: Padding(
