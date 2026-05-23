@@ -1073,12 +1073,48 @@ class _HomePageScreenState extends State<HomePageScreen> {
   Widget _buildToolListItem({required String label, required IconData icon, required Color primaryColor, required Color secondaryColor}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
-      decoration: BoxDecoration(color: primaryColor, borderRadius: BorderRadius.circular(15), boxShadow: [BoxShadow(color: primaryColor.withAlpha(50), blurRadius: 10, offset: const Offset(0, 5))]),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        title: Text(label, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-        trailing: CircleAvatar(backgroundColor: Colors.white.withAlpha(30), child: Icon(icon, color: secondaryColor, size: 28)),
-        onTap: () {},
+      decoration: BoxDecoration(
+        color: primaryColor,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withAlpha(50),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          )
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(15), // يجعل تأثير الضغط دائرياً بنفس حواف الحاوية
+          onTap: () {
+            if (label == 'العد التنازلي') {
+              Navigator.pushNamed(context, '/countdown');
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                CircleAvatar(
+                  backgroundColor: Colors.white.withAlpha(30),
+                  child: Icon(icon, color: secondaryColor, size: 28),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
