@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import '../../core/constants/app_assets.dart';
 
 class HomePageScreen extends StatefulWidget {
@@ -14,13 +15,67 @@ class _HomePageScreenState extends State<HomePageScreen> {
   // منطق العد التنازلي
   late Timer _timer;
   Duration _timeLeft = const Duration(days: 45, hours: 12, minutes: 30);
-  var a = 1;
+  
+  // Gemini AI Variables
+  final TextEditingController _chatController = TextEditingController();
+  final List<Map<String, dynamic>> _chatMessages = [];
+  bool _isTyping = false;
+  late GenerativeModel _model;
+  late ChatSession _chat;
+
   @override
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: SystemUiOverlay.values);
     _startCountdown();
+    _initGemini();
+  }
+
+  void _initGemini() {
+    // ملاحظة: يجب وضع API Key صالح هنا ليعمل الذكاء الاصطناعي
+    const apiKey = 'AIzaSyAc-fKE-o9DfoYciB0o2_UqaKUUFKuG2w0';
+    _model = GenerativeModel(model: 'gemini-2.5-flash', apiKey: apiKey);
+    _chat = _model.startChat();
+    
+    // رسالة الترحيب
+    _chatMessages.add({
+      'text': 'مرحباً بك في A Plus! أنا مساعدك الذكي، كيف يمكنني مساعدتك في دراستك اليوم؟',
+      'isMe': false,
+    });
+  }
+
+  Future<void> _sendMessage() async {
+    final message = _chatController.text.trim();
+    if (message.isEmpty) return;
+
+    setState(() {
+      _chatMessages.add({'text': message, 'isMe': true});
+      _chatController.clear();
+      _isTyping = true;
+    });
+
+    try {
+      final response = await _chat.sendMessage(Content.text(message));
+      setState(() {
+        _chatMessages.add({
+          'text': response.text ?? 'عذراً، لم أستطع فهم ذلك.',
+          'isMe': false,
+        });
+      });
+    } catch (e) {
+      debugPrint("Gemini Error: $e");
+      setState(() {
+        _chatMessages.add({
+          'text': 'حدث خطأ في الاتصال. يرجى التأكد من مفتاح API أو جودة الإنترنت. الخطأ: ${e.toString().split(':').first}',
+          'isMe': false,
+        });
+      });
+    } finally {
+      setState(() {
+        _isTyping = false;
+      });
+    }
   }
 
   void _startCountdown() {
@@ -393,18 +448,16 @@ class _HomePageScreenState extends State<HomePageScreen> {
     return Column(
       children: [
         Expanded(
-          child: ListView(
+          child: ListView.builder(
             padding: const EdgeInsets.all(20),
-            children: [
-              _buildChatBubble(
-                  "مرحباً! أنا مساعدك الذكي في A Plus. كيف يمكنني مساعدتك اليوم؟",
-                  false, primaryColor),
-              _buildChatBubble(
-                  "أريد مساعدة في مادة الرياضيات، فصل التكامل.", true, primaryColor),
-              _buildChatBubble(
-                  "بالتأكيد! التكامل هو أحد أهم فصول الرياضيات. ما هو السؤال الذي يواجهك؟",
-                  false, primaryColor),
-            ],
+            itemCount: _chatMessages.length + (_isTyping ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index == _chatMessages.length) {
+                return _buildChatBubble("جاري الكتابة...", false, primaryColor);
+              }
+              final msg = _chatMessages[index];
+              return _buildChatBubble(msg['text'], msg['isMe'], primaryColor);
+            },
           ),
         ),
         _buildChatInput(primaryColor),
@@ -432,8 +485,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
               decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(25)),
-              child: const TextField(
-                decoration: InputDecoration(
+              child: TextField(
+                controller: _chatController,
+                onSubmitted: (_) => _sendMessage(),
+                decoration: const InputDecoration(
                     hintText: "اكتب رسالتك هنا...",
                     border: InputBorder.none,
                     hintStyle: TextStyle(fontSize: 14)),
@@ -441,9 +496,14 @@ class _HomePageScreenState extends State<HomePageScreen> {
             ),
           ),
           const SizedBox(width: 10),
-          CircleAvatar(
-            backgroundColor: primaryColor,
-            child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+          GestureDetector(
+            onTap: _sendMessage,
+            child: CircleAvatar(
+              backgroundColor: primaryColor,
+              child: _isTyping 
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+            ),
           ),
         ],
       ),
