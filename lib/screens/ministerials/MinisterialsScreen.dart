@@ -103,7 +103,7 @@ class _MinisterialsScreenState extends State<MinisterialsScreen> {
       margin: const EdgeInsets.fromLTRB(4, 0, 4, 30),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12), // إضافة الحواف لتطابق الاختبارات
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: primaryColor.withAlpha(40),

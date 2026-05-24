@@ -7,7 +7,7 @@ import 'screens/stages/StagesScreen.dart';
 import 'screens/home/HomePageScreen.dart';
 import 'screens/pdf/pdf_viewer_screen.dart';
 import 'screens/exams/ExamsScreen.dart';
-import 'ministerials/ministerialsScreen.dart';
+import 'screens/ministerials/MinisterialsScreen.dart';
 import 'screens/islamic/SurahScreen.dart';
 import 'screens/english/EssaysScreen.dart';
 import 'screens/biology/BiologyDiagramsScreen.dart';
@@ -42,22 +42,15 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomePageScreen(),
         '/pdf_viewer': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-          return PdfViewerScreen(
-            title: args['title'],
-            pdfPath: args['pdfPath'],
-          );
+          return PdfViewerScreen(title: args['title'], pdfPath: args['pdfPath']);
         },
         '/exams': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-          return ExamsScreen(
-            subjectName: args['subjectName'],
-          );
+          return ExamsScreen(subjectName: args['subjectName']);
         },
         '/ministerials': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-          return MinisterialsScreen(
-            subjectName: args['subjectName'],
-          );
+          return MinisterialsScreen(subjectName: args['subjectName']);
         },
         '/surahs': (context) => const SurahScreen(),
         '/essays': (context) => const EssaysScreen(),

@@ -2,7 +2,6 @@ import 'dart:async' show Timer;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_assets.dart';
-import '../auth/SignUpScreen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -19,18 +18,14 @@ class _SplashScreenState extends State<SplashScreen> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     Timer(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const SignUpScreen()),
-      );
+      Navigator.pushReplacementNamed(context, "/signup");
     });
   }
 
   @override
   void dispose() {
     // إعادة إظهار شريط الإشعارات عند الخروج من الشاشة
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-        overlays: SystemUiOverlay.values);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
     super.dispose();
   }
 
@@ -85,6 +80,8 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
           ),
         ),
+
+        // 3 Dots
         Positioned(
           top: 80,
           right: 80,

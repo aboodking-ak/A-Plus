@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../core/constants/app_assets.dart';
 
 class StagesScreen extends StatefulWidget {
@@ -13,8 +12,6 @@ class _StagesScreenState extends State<StagesScreen> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-        overlays: SystemUiOverlay.values);
   }
 
   String? selectedStage;
@@ -150,60 +147,51 @@ class _StagesScreenState extends State<StagesScreen> {
 
   Widget _buildStagesGrid() {
     return Expanded(
-      child: Padding(
+      child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: CustomScrollView(
-          slivers: [
-            SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 2.2,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  if (index >= 6) return null;
-                  final stage = stages[index];
-                  final isSelected = selectedStage == stage['label'];
-                  return _buildStageCard(stage, isSelected);
-                },
-                childCount: 6,
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 15)),
-            SliverToBoxAdapter(
-              child: _buildStageCard(
-                stages[6],
-                selectedStage == stages[6]['label'],
-                isFullWidth: true,
-              ),
-            ),
-          ],
-        ),
+        children: [
+          // عرض أول 6 مراحل في صفوف (كل صف فيه مرحلتين)
+          _buildRow(0, 1),
+          const SizedBox(height: 15),
+          _buildRow(2, 3),
+          const SizedBox(height: 15),
+          _buildRow(4, 5),
+          const SizedBox(height: 15),
+          
+          // عرض المرحلة الأخيرة (ثالث متوسط) بعرض كامل
+          _buildStageCard(stages[6], isFullWidth: true),
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }
 
-  Widget _buildStageCard(Map<String, String> stage, bool isSelected,
-      {bool isFullWidth = false}) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-    final secondaryColor = theme.colorScheme.secondary;
+  // دالة مساعدة لبناء صف يحتوي على كارتين بجانب بعضهما
+  Widget _buildRow(int index1, int index2) {
+    return Row(
+      children: [
+        Expanded(child: _buildStageCard(stages[index1])),
+        const SizedBox(width: 15),
+        Expanded(child: _buildStageCard(stages[index2])),
+      ],
+    );
+  }
+
+  Widget _buildStageCard(Map<String, String> stage, {bool isFullWidth = false}) {
+    final isSelected = selectedStage == stage['label'];
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final secondaryColor = Theme.of(context).colorScheme.secondary;
 
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedStage = stage['label'];
-        });
-      },
+      onTap: () => setState(() => selectedStage = stage['label']),
       child: Container(
-        height: isFullWidth ? 70 : null,
+        height: 70,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? secondaryColor : Colors.grey[100]!,
+            color: isSelected ? secondaryColor : Colors.grey[200]!,
             width: isSelected ? 2 : 1,
           ),
           boxShadow: [
@@ -214,30 +202,21 @@ class _StagesScreenState extends State<StagesScreen> {
             ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  stage['label']!,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? primaryColor : Colors.grey[700],
-                  ),
-                  overflow: TextOverflow.ellipsis,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                stage['label']!,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? primaryColor : Colors.grey[700],
                 ),
               ),
-              Image.asset(
-                stage['icon']!,
-                height: 35,
-                width: 35,
-                errorBuilder: (c, e, s) => Icon(Icons.book, color: primaryColor),
-              ),
-            ],
-          ),
+            ),
+            Image.asset(stage['icon']!, height: 35, width: 35),
+          ],
         ),
       ),
     );
