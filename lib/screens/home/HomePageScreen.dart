@@ -752,7 +752,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader("الأدوات التعليمية", "4 أدوات"),
+          _buildSectionHeader("الأدوات التعليمية", "3 أدوات"),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: ListView(
@@ -762,11 +762,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
                 _buildToolListItem(
                     label: 'بومودورو',
                     icon: Icons.timer_outlined,
-                    primaryColor: primaryColor,
-                    secondaryColor: secondaryColor),
-                _buildToolListItem(
-                    label: 'خرائط ذهنية',
-                    icon: Icons.hub_outlined,
                     primaryColor: primaryColor,
                     secondaryColor: secondaryColor),
                 _buildToolListItem(
@@ -1596,8 +1591,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
               Navigator.pushNamed(context, '/notes');
             } else if (label == 'بومودورو') {
               Navigator.pushNamed(context, '/pomodoro');
-            } else if (label == 'خرائط ذهنية') {
-              Navigator.pushNamed(context, '/mind_maps');
             }
           },
           child: Padding(
