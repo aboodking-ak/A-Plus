@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_assets.dart';
 
 class HomePageScreen extends StatefulWidget {
@@ -14,8 +17,32 @@ class HomePageScreen extends StatefulWidget {
 class _HomePageScreenState extends State<HomePageScreen> {
   // منطق العد التنازلي
   late Timer _timer;
+  late Timer _tipTimer;
   Duration _timeLeft = const Duration(days: 45, hours: 12, minutes: 30);
   
+  int _currentTipIndex = 0;
+  final List<Map<String, String>> _tips = [
+    {'type': 'نصيحة', 'text': 'ابدأ يومك بنية صادقة، فالتوفيق يبدأ بصدق العمل والاجتهاد المستمر للوصول إلى هدفك.'},
+    {'type': 'دعاء', 'text': 'اللهم لا سهل إلا ما جعلته سهلاً، وأنت تجعل الحزن إذا شئت سهلاً.'},
+    {'type': 'تحفيز', 'text': 'تذكر دائماً أن القمة تتسع للجميع، فلا تتوقف حتى تصل إلى هناك وتترك بصمتك.'},
+    {'type': 'حلم', 'text': 'تخيل نفسك يوم النتائج وأنت ترفع رأس والديك فخراً، هذا الحلم يستحق كل لحظة سهر.'},
+    {'type': 'نصيحة', 'text': 'تنظيم الوقت هو نصف النجاح، خصص وقتاً للراحة كما تخصص وقتاً للدراسة لتبدع أكثر.'},
+    {'type': 'دعاء', 'text': 'اللهم اشرح لي صدري ويسر لي أمري واحلل عقدة من لساني يفقهوا قولي.'},
+    {'type': 'تحفيز', 'text': 'الفشل ليس نهاية الطريق، بل هو فرصة لتبدأ من جديد بذكاء أكبر وخبرة أكثر.'},
+    {'type': 'حلم', 'text': 'أحلامك الكبيرة تبدأ من هذه الصفحة ومن هذا الكتاب، لا تستهن بما تنجزه اليوم.'},
+    {'type': 'نصيحة', 'text': 'ركز على فهم المادة لا حفظها، فالفهم هو الذي يبقى معك في قاعة الامتحان وفي الحياة.'},
+    {'type': 'دعاء', 'text': 'ربي زدني علماً وأنر بصيرتي، واجعل علمي نافعاً لي ولأمتي.'},
+  ];
+  
+  String userName = "الطالب";
+  String userEmail = "user@email.com";
+  String? _profileImagePath;
+
+  String _getInitials(String name) {
+    if (name.isEmpty) return "S";
+    return name.trim().substring(0, 1).toUpperCase();
+  }
+
   // Gemini AI Variables
   final TextEditingController _chatController = TextEditingController();
   final List<Map<String, dynamic>> _chatMessages = [];
@@ -28,8 +55,149 @@ class _HomePageScreenState extends State<HomePageScreen> {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: SystemUiOverlay.values);
+    _loadUserData();
     _startCountdown();
     _initGemini();
+    
+    // بدء مؤقت النصائح تلقائياً كل 6 ثوانٍ
+    _tipTimer = Timer.periodic(const Duration(seconds: 6), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentTipIndex = (_currentTipIndex + 1) % _tips.length;
+        });
+      }
+    });
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedName = prefs.getString('user_name');
+    final savedEmail = prefs.getString('user_email');
+    final savedImagePath = prefs.getString('profile_image_path');
+    
+    if (mounted) {
+      setState(() {
+        if (savedName != null && savedName.isNotEmpty) {
+          userName = savedName;
+        }
+        userEmail = savedEmail ?? "user@email.com";
+        _profileImagePath = savedImagePath;
+      });
+    }
+  }
+
+  Future<void> _editNameDialog() async {
+    final TextEditingController nameController = TextEditingController(text: userName);
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.edit_note_rounded, size: 40, color: primaryColor),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "تعديل الاسم",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: nameController,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                decoration: InputDecoration(
+                  hintText: "أدخل اسمك الجديد",
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("إلغاء", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        final newName = nameController.text.trim();
+                        if (newName.isNotEmpty) {
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setString('user_name', newName);
+                          setState(() {
+                            userName = newName;
+                          });
+                          if (mounted) Navigator.pop(context);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      child: const Text("حفظ", style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    try {
+      // محاولة فتح المعرض بجودة عالية
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 2000, // رفع الحد الأقصى للعرض
+        maxHeight: 2000, // رفع الحد الأقصى للطول
+        imageQuality: 100, // الجودة الكاملة
+      );
+      
+      if (image != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('profile_image_path', image.path);
+        setState(() {
+          _profileImagePath = image.path;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("تم تحديث الصورة الشخصية بنجاح")),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint("Error picking image: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("فشل الوصول إلى المعرض، يرجى منح الإذن من إعدادات الهاتف")),
+        );
+      }
+    }
   }
 
   void _initGemini() {
@@ -91,6 +259,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
   @override
   void dispose() {
     _timer.cancel();
+    _tipTimer.cancel();
     super.dispose();
   }
 
@@ -209,17 +378,20 @@ class _HomePageScreenState extends State<HomePageScreen> {
         textDirection: TextDirection.rtl,
         child: Scaffold(
           backgroundColor: Colors.white,
+          resizeToAvoidBottomInset: false, // الحل الاحترافي: منع الشاشة من الانضغاط
           appBar: AppBar(
             toolbarHeight: 80,
             backgroundColor: primaryColor,
-            elevation: 12,
-            shadowColor: primaryColor.withAlpha(120),
+            elevation: 4, // رفع قيمة الظل ليكون حاداً وواضحاً
+            shadowColor: Colors.black, // لون ظل أسود صريح ليكون حاداً
+            surfaceTintColor: Colors.transparent, // منع تغير اللون عند التمرير في Material 3
             centerTitle: false,
             systemOverlayStyle: SystemUiOverlayStyle.light,
+
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(35),
-                bottomRight: Radius.circular(35),
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
               ),
             ),
             title: Padding(
@@ -239,7 +411,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white.withAlpha(30),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withAlpha(40), width: 1),
+                  border: Border.all(color: Colors.white.withAlpha(50), width: 1.5), // حواف بيضاء خفيفة وواضحة
                 ),
                 child: TabBar(
                   dividerColor: Colors.transparent,
@@ -264,15 +436,19 @@ class _HomePageScreenState extends State<HomePageScreen> {
               ),
             ),
           ),
-          body: TabBarView(
-            children: [
-              _buildHomeView(),
-              _buildAiChatView(primaryColor),
-              _buildToolsView(primaryColor, secondaryColor),
-              _buildNotificationsView(primaryColor, secondaryColor),
-              _buildLeaderboardView(primaryColor, secondaryColor),
-              _buildProfileView(selectedStage, primaryColor, secondaryColor),
-            ],
+          body: SafeArea(
+            bottom: true, // يضمن عدم تداخل المحتوى مع أزرار النظام في الأسفل
+            child: TabBarView(
+              // تم ترك خاصية physics افتراضية للسماح بالسحب بين التبويبات
+              children: [
+                _buildHomeView(),
+                _buildAiChatView(primaryColor),
+                _buildToolsView(primaryColor, secondaryColor),
+                _buildNotificationsView(primaryColor, secondaryColor),
+                _buildLeaderboardView(primaryColor, secondaryColor),
+                _buildProfileView(selectedStage, primaryColor, secondaryColor),
+              ],
+            ),
           ),
         ),
       ),
@@ -285,7 +461,14 @@ class _HomePageScreenState extends State<HomePageScreen> {
         CircleAvatar(
           radius: 22,
           backgroundColor: Colors.white.withAlpha(40),
-          child: const Icon(Icons.person_rounded, color: Colors.white, size: 26),
+          backgroundImage: _profileImagePath != null ? FileImage(File(_profileImagePath!)) : null,
+          child: _profileImagePath == null
+              ? Text(
+                  _getInitials(userName),
+                  style: const TextStyle(
+                      color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                )
+              : null,
         ),
         const SizedBox(width: 12),
         Column(
@@ -303,7 +486,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                           fontSize: 15,
                           fontWeight: FontWeight.bold)),
                   TextSpan(
-                      text: "اسم المستخدم",
+                      text: userName, // <--- المتغير هنا
                       style: TextStyle(
                           color: secondaryColor,
                           fontSize: 15,
@@ -371,10 +554,11 @@ class _HomePageScreenState extends State<HomePageScreen> {
   Widget _buildMotivationalSection() {
     final primaryColor = Theme.of(context).colorScheme.primary;
     final secondaryColor = Theme.of(context).colorScheme.secondary;
+    final currentTip = _tips[_currentTipIndex];
 
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      height: 130,
+      height: 140, // زيادة الطول قليلاً لاستيعاب النصوص المتغيرة
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primaryColor, primaryColor.withAlpha(200)],
@@ -412,28 +596,44 @@ class _HomePageScreenState extends State<HomePageScreen> {
                         color: secondaryColor.withAlpha(40),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.lightbulb_rounded,
-                          color: secondaryColor, size: 18),
+                      child: Icon(
+                        _getTipIcon(currentTip['type']!),
+                        color: secondaryColor,
+                        size: 18,
+                      ),
                     ),
                     const SizedBox(width: 10),
-                    const Text("نصيحة اليوم",
-                        style: TextStyle(
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 500),
+                      child: Text(
+                        "${currentTip['type']} اليوم",
+                        key: ValueKey<int>(_currentTipIndex),
+                        style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 12,
-                            fontWeight: FontWeight.bold)),
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Expanded(
-                  child: Text(
-                    "ابدأ يومك بنية صادقة، فالتوفيق يبدأ بصدق العمل والاجتهاد المستمر للوصول إلى هدفك.",
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        height: 1.5),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 800),
+                    transitionBuilder: (Widget child, Animation<double> animation) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+                    child: Text(
+                      currentTip['text']!,
+                      key: ValueKey<int>(_currentTipIndex),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          height: 1.5),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ],
@@ -442,6 +642,15 @@ class _HomePageScreenState extends State<HomePageScreen> {
         ],
       ),
     );
+  }
+
+  IconData _getTipIcon(String type) {
+    switch (type) {
+      case 'دعاء': return Icons.star_rounded;
+      case 'تحفيز': return Icons.bolt_rounded;
+      case 'حلم': return Icons.auto_awesome_rounded;
+      default: return Icons.lightbulb_rounded;
+    }
   }
 
   Widget _buildAiChatView(Color primaryColor) {
@@ -466,46 +675,49 @@ class _HomePageScreenState extends State<HomePageScreen> {
   }
 
   Widget _buildChatInput(Color primaryColor) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withAlpha(20),
-              blurRadius: 10,
-              offset: const Offset(0, -5)),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(25)),
-              child: TextField(
-                controller: _chatController,
-                onSubmitted: (_) => _sendMessage(),
-                decoration: const InputDecoration(
-                    hintText: "اكتب رسالتك هنا...",
-                    border: InputBorder.none,
-                    hintStyle: TextStyle(fontSize: 14)),
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom), // يرتفع يدوياً مع الكيبورد
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withAlpha(20),
+                blurRadius: 10,
+                offset: const Offset(0, -5)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(25)),
+                child: TextField(
+                  controller: _chatController,
+                  onSubmitted: (_) => _sendMessage(),
+                  decoration: const InputDecoration(
+                      hintText: "اكتب رسالتك هنا...",
+                      border: InputBorder.none,
+                      hintStyle: TextStyle(fontSize: 14)),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: _sendMessage,
-            child: CircleAvatar(
-              backgroundColor: primaryColor,
-              child: _isTyping 
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: _sendMessage,
+              child: CircleAvatar(
+                backgroundColor: primaryColor,
+                child: _isTyping 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -588,40 +800,66 @@ class _HomePageScreenState extends State<HomePageScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       itemCount: _notifications.length,
       itemBuilder: (context, index) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 15),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withAlpha(50),
-                  blurRadius: 10,
-                  offset: const Offset(0, 0)),
-            ],
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(15),
-            leading: CircleAvatar(
-              backgroundColor: secondaryColor.withAlpha(25),
-              child: Icon(Icons.notifications_active_outlined,
-                  color: secondaryColor),
+        return Dismissible(
+          key: Key(_notifications[index]['title']! + _notifications[index]['time']!),
+          direction: DismissDirection.startToEnd,
+          onDismissed: (direction) {
+            setState(() {
+              _notifications.removeAt(index);
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("تم حذف الإشعار"),
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          },
+          background: Container(
+            margin: const EdgeInsets.only(bottom: 15),
+            decoration: BoxDecoration(
+              color: Colors.redAccent,
+              borderRadius: BorderRadius.circular(15),
             ),
-            title: Text(_notifications[index]['title']!,
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                    fontSize: 16)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 5),
-                Text(_notifications[index]['body']!,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-                const SizedBox(height: 8),
-                Text(_notifications[index]['time']!,
-                    style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            child: const Icon(Icons.delete_sweep_rounded, color: Colors.white),
+          ),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 15),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withAlpha(50),
+                    blurRadius: 10,
+                    offset: const Offset(0, 0)),
               ],
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(15),
+              leading: CircleAvatar(
+                backgroundColor: secondaryColor.withAlpha(25),
+                child: Icon(Icons.notifications_active_outlined,
+                    color: secondaryColor),
+              ),
+              title: Text(_notifications[index]['title']!,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                      fontSize: 16)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 5),
+                  Text(_notifications[index]['body']!,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                  const SizedBox(height: 8),
+                  Text(_notifications[index]['time']!,
+                      style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                ],
+              ),
             ),
           ),
         );
@@ -676,6 +914,80 @@ class _HomePageScreenState extends State<HomePageScreen> {
     );
   }
 
+  void _showFullImageDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: Colors.black87,
+              ),
+            ),
+            Hero(
+              tag: 'profile_pic',
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.9,
+                height: MediaQuery.of(context).size.width * 0.9,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  image: _profileImagePath != null
+                    ? DecorationImage(image: FileImage(File(_profileImagePath!)), fit: BoxFit.cover)
+                    : null,
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                ),
+                child: _profileImagePath == null
+                    ? Center(
+                        child: Text(
+                          _getInitials(userName),
+                          style: const TextStyle(fontSize: 80, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 35),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            if (_profileImagePath != null)
+              Positioned(
+                top: 40,
+                left: 20,
+                child: IconButton(
+                  icon: const Icon(Icons.delete_forever_rounded, color: Colors.redAccent, size: 35),
+                  onPressed: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.remove('profile_image_path');
+                    setState(() {
+                      _profileImagePath = null;
+                    });
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("تم حذف الصورة الشخصية")),
+                      );
+                    }
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildProfileView(
       String stage, Color primaryColor, Color secondaryColor) {
     return Padding(
@@ -685,16 +997,67 @@ class _HomePageScreenState extends State<HomePageScreen> {
         children: [
           const SizedBox(height: 20),
           Center(
-            child: CircleAvatar(
-              radius: 50,
-              backgroundColor: secondaryColor.withAlpha(25),
-              child: Icon(Icons.person, size: 60, color: primaryColor),
+            child: Stack(
+              children: [
+                GestureDetector(
+                  onTap: _showFullImageDialog,
+                  child: Hero(
+                    tag: 'profile_pic',
+                    child: CircleAvatar(
+                      radius: 55, // تكبير الحجم قليلاً
+                      backgroundColor: secondaryColor.withAlpha(25),
+                      backgroundImage: _profileImagePath != null ? FileImage(File(_profileImagePath!)) : null,
+                      child: _profileImagePath == null
+                          ? Text(
+                              _getInitials(userName),
+                              style: TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryColor),
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 2,
+                  right: 2,
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white, // خلفية بيضاء
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(40),
+                            blurRadius: 5,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(Icons.camera_alt_outlined, color: primaryColor, size: 20), // أيقونة تعديل ولون أساسي
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 40),
-          _buildProfileData("الاسم الكامل", "اسم المستخدم", primaryColor),
+          InkWell(
+            onTap: _editNameDialog,
+            borderRadius: BorderRadius.circular(10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildProfileData("الاسم الكامل", userName, primaryColor),
+                Icon(Icons.edit_note_rounded, color: secondaryColor, size: 24),
+              ],
+            ),
+          ),
           const Divider(height: 30),
-          _buildProfileData("البريد الإلكتروني", "user@email.com", primaryColor),
+          _buildProfileData("البريد الإلكتروني", userEmail, primaryColor), // <--- هنا الايميل
           const Divider(height: 30),
           _buildStageData(stage, primaryColor, secondaryColor),
           const Divider(height: 30),
@@ -737,6 +1100,134 @@ class _HomePageScreenState extends State<HomePageScreen> {
     );
   }
 
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.logout_rounded, size: 50, color: Colors.redAccent),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "تسجيل الخروج",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                "هل أنت متأكد من رغبتك في تسجيل الخروج؟",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.black87),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("إلغاء", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // منطق تسجيل الخروج
+                        Navigator.pushNamedAndRemoveUntil(context, '/signin', (route) => false);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      child: const Text("خروج", style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.delete_forever_rounded, size: 50, color: Colors.red),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "حذف الحساب نهائياً",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                "سيؤدي هذا الإجراء إلى حذف كافة بياناتك وملاحظاتك ولا يمكن التراجع عنه. هل أنت متأكد؟",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.black87, height: 1.5),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("تراجع", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // منطق حذف الحساب
+                        Navigator.pushNamedAndRemoveUntil(context, '/signup', (route) => false);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      child: const Text("حذف الآن", style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildAccountActions() {
     return Row(
       children: [
@@ -755,7 +1246,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () {},
+                onTap: () => _showLogoutDialog(context),
                 borderRadius: BorderRadius.circular(15),
                 child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 15),
@@ -792,7 +1283,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {},
+          onTap: () => _showDeleteAccountDialog(context),
           borderRadius: BorderRadius.circular(15),
           child: const Padding(
             padding: EdgeInsets.all(15),

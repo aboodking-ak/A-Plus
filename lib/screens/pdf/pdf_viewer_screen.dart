@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdfrx/pdfrx.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PdfViewerScreen extends StatefulWidget {
   final String title;
@@ -19,6 +20,25 @@ class PdfViewerScreen extends StatefulWidget {
 class _PdfViewerScreenState extends State<PdfViewerScreen> {
   bool _isFullScreen = false;
   final PdfViewerController _controller = PdfViewerController();
+
+  @override
+  void initState() {
+    super.initState();
+    // التحميل المسبق للصفحة الأخيرة عند فتح الكتاب
+  }
+
+  Future<void> _saveLastPage(int pageNumber) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('last_page_${widget.pdfPath}', pageNumber);
+  }
+
+  Future<void> _loadLastPage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastPage = prefs.getInt('last_page_${widget.pdfPath}');
+    if (lastPage != null && lastPage > 0) {
+      _controller.goToPage(pageNumber: lastPage);
+    }
+  }
 
   void _toggleFullScreen() {
     setState(() {
@@ -61,6 +81,14 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               widget.pdfPath,
               controller: _controller,
               params: PdfViewerParams(
+                onViewerReady: (document, controller) {
+                  _loadLastPage();
+                },
+                onPageChanged: (pageNumber) {
+                  if (pageNumber != null) {
+                    _saveLastPage(pageNumber);
+                  }
+                },
                 textSelectionParams: const PdfTextSelectionParams(
                   enabled: false,
                 ),

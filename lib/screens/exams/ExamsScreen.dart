@@ -12,8 +12,24 @@ class _ExamsScreenState extends State<ExamsScreen> {
   String? selectedChapter;
   String? selectedTopic;
 
-  final List<String> chapters = ["شامل", "الفصل الأول", "الفصل الثاني", "الفصل الثالث", "الفصل الرابع"];
-  final List<String> topics = ["شامل", "الموضوع الأول", "الموضوع الثاني", "الموضوع الثالث"];
+  final PageController _pageController = PageController();
+  int _currentIndex = 0;
+  bool _showAnswer = false;
+
+  // هيكلية البيانات: كل فصل والمواضيع التابعة له
+  final Map<String, List<String>> _data = {
+    "الفصل الأول": ["الموضوع الأول", "الموضوع الثاني", "الموضوع الثالث"],
+    "الفصل الثاني": ["الموضوع الأول", "الموضوع الثاني"],
+    "الفصل الثالث": ["الموضوع الأول", "الموضوع الثاني", "الموضوع الثالث", "الموضوع الرابع"],
+    "الفصل الرابع": ["الموضوع الأول"],
+  };
+
+  List<String> get chapters => _data.keys.toList();
+
+  List<String> get currentTopics {
+    if (selectedChapter == null) return [];
+    return ["شامل", ..._data[selectedChapter]!];
+  }
 
   final List<String> questions = List.generate(10, (index) => "هذا هو نص السؤال رقم ${index + 1} في مادة الاختبار؟ يمكن أن يكون السؤال طويلاً ليشغل أكثر من سطر.");
 
@@ -32,64 +48,116 @@ class _ExamsScreenState extends State<ExamsScreen> {
         elevation: 0,
         centerTitle: true,
         toolbarHeight: 70,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20), // سهم الرجوع في اليمين
+          onPressed: () => Navigator.pop(context),
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(80),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildAppBarDropdown("الفصل", Icons.folder_open_rounded, chapters, selectedChapter, (val) {
-                    setState(() => selectedChapter = val);
-                  }),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildAppBarDropdown("الموضوع", Icons.topic_outlined, topics, selectedTopic, (val) {
-                    setState(() => selectedTopic = val);
-                  }),
-                ),
-              ],
-            ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list_rounded), // أيقونة التصفية في اليسار
+            onPressed: () => _showSelectionBottomSheet(context, primaryColor),
           ),
-        ),
+        ],
       ),
       body: _buildQuestionsList(primaryColor),
     );
   }
 
-  Widget _buildAppBarDropdown(String hint, IconData icon, List<String> items, String? value, ValueChanged<String?> onChanged) {
+  void _showSelectionBottomSheet(BuildContext context, Color primaryColor) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "اختيار مادة الاختبار",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildModalDropdown(
+                    "الفصل",
+                    Icons.folder_open_rounded,
+                    chapters,
+                    selectedChapter,
+                    (val) {
+                      setModalState(() {
+                        selectedChapter = val;
+                        selectedTopic = null;
+                      });
+                      setState(() {
+                        selectedChapter = val;
+                        selectedTopic = null;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildModalDropdown(
+                    "الموضوع",
+                    Icons.topic_outlined,
+                    currentTopics,
+                    selectedTopic,
+                    (val) {
+                      setModalState(() => selectedTopic = val);
+                      setState(() => selectedTopic = val);
+                    },
+                    isEnabled: selectedChapter != null,
+                  ),
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: (selectedChapter != null && selectedTopic != null)
+                          ? () => Navigator.pop(context)
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text("تأكيد الاختيار", style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildModalDropdown(String hint, IconData icon, List<String> items, String? value, ValueChanged<String?> onChanged, {bool isEnabled = true}) {
     return Container(
-      height: 45,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(240),
-        borderRadius: BorderRadius.zero, // حواف مستقيمة كما في الواجهة
-        border: Border.all(color: Colors.white.withAlpha(50), width: 1),
+        color: isEnabled ? Colors.grey[50] : Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           isExpanded: true,
-          dropdownColor: Colors.white,
-          icon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.blueGrey[700], size: 18),
+          value: value,
           hint: Row(
             children: [
-              Icon(icon, size: 14, color: Colors.blueGrey[400]),
-              const SizedBox(width: 8),
-              Text(hint, style: TextStyle(fontSize: 12, color: Colors.blueGrey[400], fontWeight: FontWeight.bold)),
+              Icon(icon, size: 20, color: Colors.grey[400]),
+              const SizedBox(width: 12),
+              Text(hint, style: TextStyle(color: Colors.grey[400])),
             ],
           ),
-          value: value,
-          items: items.map((String item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
-            );
-          }).toList(),
-          onChanged: onChanged,
+          items: isEnabled ? items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList() : null,
+          onChanged: isEnabled ? onChanged : null,
         ),
       ),
     );
@@ -105,92 +173,176 @@ class _ExamsScreenState extends State<ExamsScreen> {
               padding: const EdgeInsets.all(25),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20),
+                ],
               ),
-              child: Icon(Icons.auto_awesome_motion_rounded, size: 50, color: primaryColor.withAlpha(40)),
+              child: Icon(Icons.assignment_outlined, size: 50, color: primaryColor.withValues(alpha: 0.3)),
             ),
             const SizedBox(height: 20),
-            Text("يرجى اختيار الفصل والموضوع",
-                style: TextStyle(color: Colors.blueGrey[400], fontSize: 15, fontWeight: FontWeight.w600)),
+            const Text(
+              "يرجى اختيار المادة لبدء الاختبار",
+              style: TextStyle(color: Colors.grey, fontSize: 15, fontWeight: FontWeight.w600),
+            ),
           ],
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 30),
-      itemCount: questions.length,
-      itemBuilder: (context, index) {
-        return Container(
-          margin: const EdgeInsets.fromLTRB(20, 0, 20, 30),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: primaryColor.withAlpha(40),
-                blurRadius: 0,
-                offset: const Offset(0, 6),
+    return Column(
+      children: [
+        // شريط التقدم
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "السؤال ${_currentIndex + 1} من ${questions.length}",
+                    style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  Text(
+                    "${((_currentIndex + 1) / questions.length * 100).toInt()}%",
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ],
               ),
-              BoxShadow(
-                color: Colors.black.withAlpha(15),
-                blurRadius: 15,
-                offset: const Offset(0, 10),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: (_currentIndex + 1) / questions.length,
+                  minHeight: 8,
+                  backgroundColor: Colors.grey[200],
+                  valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                ),
               ),
             ],
-            border: Border.all(color: Colors.blueGrey[50]!, width: 1),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    border: Border(bottom: BorderSide(color: Colors.blueGrey[50]!, width: 1)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withAlpha(20),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Icon(Icons.stars_rounded, size: 14, color: primaryColor),
+        ),
+
+        // عرض الأسئلة (PageView)
+        Expanded(
+          child: PageView.builder(
+            controller: _pageController,
+            physics: const NeverScrollableScrollPhysics(), // منع السحب اليدوي لضمان استخدام الأزرار
+            onPageChanged: (index) {
+              setState(() {
+                _currentIndex = index;
+                _showAnswer = false;
+              });
+            },
+            itemCount: questions.length,
+            itemBuilder: (context, index) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(25),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      questions[index],
+                      style: const TextStyle(
+                        fontSize: 18,
+                        height: 1.8,
+                        color: Color(0xFF334155),
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(width: 10),
-                      Text(
-                        "السؤال ${index + 1}",
+                    ),
+                    if (_showAnswer) ...[
+                      const SizedBox(height: 30),
+                      const Divider(),
+                      const SizedBox(height: 20),
+                      const Text(
+                        "الإجابة النموذجية:",
                         style: TextStyle(
-                          color: Colors.blueGrey[800],
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        "هذا هو نص الإجابة النموذجية للسؤال المختار. يتم عرضه بعد ضغط زر 'عرض الجواب'.",
+                        style: TextStyle(
+                          fontSize: 15,
+                          height: 1.7,
+                          color: Color(0xFF64748B),
                         ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 25, 20, 30),
-                  child: Text(
-                    questions[index],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      height: 1.6,
-                      color: Color(0xFF1E293B),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
-        );
-      },
+        ),
+
+        // أزرار التحكم في الأسفل
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5)),
+            ],
+          ),
+          child: Row(
+            children: [
+              if (_currentIndex > 0)
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      _pageController.previousPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text("السابق"),
+                  ),
+                ),
+              if (_currentIndex > 0) const SizedBox(width: 15),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (!_showAnswer) {
+                      setState(() => _showAnswer = true);
+                    } else if (_currentIndex < questions.length - 1) {
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    } else {
+                      // نهاية الاختبار
+                      Navigator.pop(context);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor, // توحيد اللون مع لون التطبيق الأساسي
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    !_showAnswer 
+                        ? "عرض الجواب" 
+                        : (_currentIndex < questions.length - 1 ? "السؤال التالي" : "إنهاء الاختبار"),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

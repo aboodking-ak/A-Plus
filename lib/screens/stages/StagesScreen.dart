@@ -179,28 +179,44 @@ class _StagesScreenState extends State<StagesScreen> {
 
   Widget _buildStageCard(Map<String, String> stage, {bool isFullWidth = false}) {
     final isSelected = selectedStage == stage['label'];
+    final bool isAvailable = stage['label'] == 'سادس علمي';
     final primaryColor = Theme.of(context).colorScheme.primary;
     final secondaryColor = Theme.of(context).colorScheme.secondary;
 
     return GestureDetector(
-      onTap: () => setState(() => selectedStage = stage['label']),
+      onTap: isAvailable
+          ? () => setState(() => selectedStage = stage['label'])
+          : () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("هذه المرحلة ستتوفر قريباً"),
+                  duration: Duration(seconds: 1),
+                  behavior: SnackBarBehavior.floating,
+                  margin: EdgeInsets.fromLTRB(5, 0, 5, 5),
+                ),
+              );
+            },
       child: Container(
         height: 70,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isAvailable ? Colors.white : Colors.grey[50],
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? secondaryColor : Colors.grey[200]!,
+            color: isSelected
+                ? secondaryColor
+                : (isAvailable ? Colors.grey[200]! : Colors.grey[100]!),
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(10),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: isAvailable
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(10),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -211,11 +227,16 @@ class _StagesScreenState extends State<StagesScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? primaryColor : Colors.grey[700],
+                  color: isSelected
+                      ? primaryColor
+                      : (isAvailable ? Colors.grey[700] : Colors.grey[400]),
                 ),
               ),
             ),
-            Image.asset(stage['icon']!, height: 35, width: 35),
+            Opacity(
+              opacity: isAvailable ? 1.0 : 0.4,
+              child: Image.asset(stage['icon']!, height: 35, width: 35),
+            ),
           ],
         ),
       ),

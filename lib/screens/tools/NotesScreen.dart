@@ -94,8 +94,8 @@ class _NotesScreenState extends State<NotesScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToNoteEditor(),
-        backgroundColor: Colors.amber[700],
-        child: const Icon(Icons.edit_note, color: Colors.white, size: 30),
+        backgroundColor: primaryColor,
+        child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
       ),
     );
   }
@@ -103,18 +103,26 @@ class _NotesScreenState extends State<NotesScreen> {
   Widget _buildNoteItem(Note note, int index) {
     return Dismissible(
       key: UniqueKey(),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        color: Colors.red,
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
+      direction: DismissDirection.startToEnd, // من اليمين إلى اليسار في وضع RTL
       onDismissed: (direction) {
         setState(() {
           _notes.removeAt(index);
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("تم حذف الملاحظة"),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       },
+      background: Container(
+        decoration: const BoxDecoration(
+          color: Colors.redAccent,
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: const Icon(Icons.delete_sweep_rounded, color: Colors.white),
+      ),
       child: InkWell(
         onTap: () => _navigateToNoteEditor(note: note, index: index),
         child: Container(

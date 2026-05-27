@@ -10,7 +10,22 @@ class MinisterialsScreen extends StatefulWidget {
 
 class _MinisterialsScreenState extends State<MinisterialsScreen> {
   String? selectedChapter;
-  final List<String> chapters = ["شامل", "الفصل الأول", "الفصل الثاني", "الفصل الثالث", "الفصل الرابع"];
+  String? selectedTopic;
+
+  // هيكلية البيانات: كل فصل والمواضيع التابعة له
+  final Map<String, List<String>> _data = {
+    "الفصل الأول": ["الموضوع الأول", "الموضوع الثاني", "الموضوع الثالث"],
+    "الفصل الثاني": ["الموضوع الأول", "الموضوع الثاني"],
+    "الفصل الثالث": ["الموضوع الأول", "الموضوع الثاني", "الموضوع الثالث", "الموضوع الرابع"],
+    "الفصل الرابع": ["الموضوع الأول"],
+  };
+
+  List<String> get chapters => _data.keys.toList();
+
+  List<String> get currentTopics {
+    if (selectedChapter == null) return [];
+    return ["شامل", ..._data[selectedChapter]!];
+  }
 
   final List<Map<String, dynamic>> ministerialQuestions = List.generate(8, (index) => {
     'question': 'ما هو تعريف الثرموداينمك وما هي أهم القوانين المرتبطة به في هذه الحالة؟',
@@ -33,183 +48,263 @@ class _MinisterialsScreenState extends State<MinisterialsScreen> {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 4, // يرتفع ويظهر ظل عند السكرول
+        surfaceTintColor: primaryColor, // يتغير اللون بشكل طفيف عند السكرول ليعطي طابع Material 3
         centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(70),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 15),
-            child: _buildChapterSelector(secondaryColor),
-          ),
+        toolbarHeight: 70,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20), // سهم الرجوع في اليمين
+          onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list_rounded), // أيقونة التصفية في اليسار
+            onPressed: () => _showSelectionBottomSheet(context, primaryColor),
+          ),
+        ],
       ),
       body: _buildQuestionsList(primaryColor, secondaryColor),
     );
   }
 
-  Widget _buildChapterSelector(Color secondaryColor) {
+  void _showSelectionBottomSheet(BuildContext context, Color primaryColor) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "اختيار مادة الوزاريات",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildModalDropdown(
+                    "الفصل",
+                    Icons.folder_open_rounded,
+                    chapters,
+                    selectedChapter,
+                    (val) {
+                      setModalState(() {
+                        selectedChapter = val;
+                        selectedTopic = null;
+                      });
+                      setState(() {
+                        selectedChapter = val;
+                        selectedTopic = null;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildModalDropdown(
+                    "الموضوع",
+                    Icons.topic_outlined,
+                    currentTopics,
+                    selectedTopic,
+                    (val) {
+                      setModalState(() => selectedTopic = val);
+                      setState(() => selectedTopic = val);
+                    },
+                    isEnabled: selectedChapter != null,
+                  ),
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: (selectedChapter != null && selectedTopic != null)
+                          ? () => Navigator.pop(context)
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text("تأكيد الاختيار", style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildModalDropdown(String hint, IconData icon, List<String> items, String? value, ValueChanged<String?> onChanged, {bool isEnabled = true}) {
     return Container(
-      height: 45,
-      padding: const EdgeInsets.symmetric(horizontal: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.zero,
-        border: Border.all(color: Colors.white.withAlpha(50)),
+        color: isEnabled ? Colors.grey[50] : Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           isExpanded: true,
-          hint: const Text("اختر الفصل لعرض الوزاريات", style: TextStyle(fontSize: 13)),
-          value: selectedChapter,
-          icon: Icon(Icons.keyboard_arrow_down_rounded, color: secondaryColor),
-          items: chapters.map((String item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-            );
-          }).toList(),
-          onChanged: (val) => setState(() => selectedChapter = val),
+          value: value,
+          hint: Row(
+            children: [
+              Icon(icon, size: 20, color: Colors.grey[400]),
+              const SizedBox(width: 12),
+              Text(hint, style: TextStyle(color: Colors.grey[400])),
+            ],
+          ),
+          items: isEnabled ? items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList() : null,
+          onChanged: isEnabled ? onChanged : null,
         ),
       ),
     );
   }
 
   Widget _buildQuestionsList(Color primaryColor, Color secondaryColor) {
-    if (selectedChapter == null) {
+    if (selectedChapter == null || selectedTopic == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.account_balance_rounded, size: 80, color: primaryColor.withAlpha(40)),
-            const SizedBox(height: 16),
-            const Text("يرجى اختيار الفصل لعرض الأسئلة الوزارية",
-                style: TextStyle(color: Colors.blueGrey, fontSize: 15, fontWeight: FontWeight.w500)),
+            Container(
+              padding: const EdgeInsets.all(25),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20),
+                ],
+              ),
+              child: Icon(Icons.history_edu_rounded, size: 50, color: primaryColor.withValues(alpha: 0.3)),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              "يرجى اختيار المادة لعرض الوزاريات",
+              style: TextStyle(color: Colors.grey, fontSize: 15, fontWeight: FontWeight.w600),
+            ),
           ],
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+    return ListView.separated(
+      padding: EdgeInsets.zero,
       itemCount: ministerialQuestions.length,
+      separatorBuilder: (context, index) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 30),
+        child: Container(
+          height: 1,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.transparent,
+                Colors.blueGrey.withValues(alpha: 0.15),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+      ),
       itemBuilder: (context, index) {
         final item = ministerialQuestions[index];
-        return _buildMinisterialCard(item, index, primaryColor, secondaryColor);
+        return _buildMinisterialItem(item, index, primaryColor, secondaryColor);
       },
     );
   }
 
-  Widget _buildMinisterialCard(Map<String, dynamic> item, int index, Color primaryColor, Color secondaryColor) {
+  Widget _buildMinisterialItem(Map<String, dynamic> item, int index, Color primaryColor, Color secondaryColor) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(4, 0, 4, 30),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withAlpha(40),
-            blurRadius: 0,
-            offset: const Offset(0, 6),
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // رأس السؤال (السنة والدور)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.history_edu_rounded, size: 18, color: primaryColor),
+                    const SizedBox(width: 10),
+                    Text(
+                      "سؤال وزاري ${index + 1}",
+                      style: TextStyle(
+                        color: Colors.blueGrey[800],
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: secondaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    "${item['year']} - ${item['session']}",
+                    style: TextStyle(color: secondaryColor, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
           ),
-          BoxShadow(
-            color: Colors.black.withAlpha(15),
-            blurRadius: 15,
-            offset: const Offset(0, 10),
+          // نص السؤال
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 15, 20, 10),
+            child: Text(
+              item['question'],
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                height: 1.6,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+          ),
+          // الجواب (قابل للطي)
+          Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              title: Text(
+                "عرض الجواب النموذجي",
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: secondaryColor),
+              ),
+              iconColor: secondaryColor,
+              collapsedIconColor: secondaryColor,
+              tilePadding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 15),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+                    ),
+                    child: Text(
+                      item['answer'],
+                      style: const TextStyle(fontSize: 14, height: 1.7, color: Colors.black87),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
-        border: Border.all(color: Colors.blueGrey[50]!, width: 1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // رأس البطاقة (التاريخ والدور)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                border: Border(bottom: BorderSide(color: Colors.blueGrey[50]!, width: 1)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withAlpha(20),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Icon(Icons.history_edu_rounded, size: 14, color: primaryColor),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        "سؤال وزاري ${index + 1}",
-                        style: TextStyle(
-                          color: Colors.blueGrey[800],
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(color: secondaryColor, borderRadius: BorderRadius.circular(4)),
-                    child: Text(
-                      "${item['year']} - ${item['session']}",
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // نص السؤال
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 25, 20, 15),
-              child: Text(
-                item['question'],
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  height: 1.6,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-            ),
-            // الجواب (قابل للطي)
-            Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-              child: ExpansionTile(
-                title: Text(
-                  "عرض الجواب النموذجي",
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: secondaryColor),
-                ),
-                iconColor: secondaryColor,
-                collapsedIconColor: secondaryColor,
-                tilePadding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        item['answer'],
-                        style: const TextStyle(fontSize: 14, height: 1.7, color: Colors.black87),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -9,9 +9,23 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+
   @override
-  void initState() {
-    super.initState();
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_formKey.currentState!.validate()) {
+      // إذا كانت البيانات صحيحة، انتقل للمرحلة التالية
+      Navigator.pushReplacementNamed(context, '/stages');
+    }
   }
 
   @override
@@ -27,8 +41,10 @@ class _SignInScreenState extends State<SignInScreen> {
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 25.0),
-            child: Column(
-              children: [
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
                 const SizedBox(height: 20),
                 _buildHeader(primaryColor, secondaryColor),
                 const SizedBox(height: 30),
@@ -37,10 +53,6 @@ class _SignInScreenState extends State<SignInScreen> {
                 _buildForgotPassword(secondaryColor),
                 const SizedBox(height: 25),
                 _buildSignInButton(context, primaryColor),
-                const SizedBox(height: 20),
-                _buildDivider(),
-                const SizedBox(height: 20),
-                _buildSocialButtons(),
                 const SizedBox(height: 40),
                 _buildBottomLink(context, secondaryColor),
                 const SizedBox(height: 20),
@@ -49,7 +61,7 @@ class _SignInScreenState extends State<SignInScreen> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildHeader(Color primaryColor, Color secondaryColor) {
@@ -103,43 +115,165 @@ class _SignInScreenState extends State<SignInScreen> {
     return Column(
       children: [
         _buildTextField(
+          controller: _emailController,
           hint: "البريد الإلكتروني",
           icon: Icons.email_outlined,
           keyboardType: TextInputType.emailAddress,
-          height: 48,
+          height: 65, // زيادة الارتفاع لاستيعاب رسالة الخطأ
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return "يرجى إدخال البريد الإلكتروني";
+            }
+            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+              return "يرجى إدخال بريد إلكتروني صحيح";
+            }
+            return null;
+          },
         ),
         const SizedBox(height: 12),
         _buildTextField(
+          controller: _passwordController,
           hint: "كلمة المرور",
           icon: Icons.lock_outline,
           isPassword: true,
-          height: 48,
+          height: 65,
+          obscureText: _obscurePassword,
+          onToggleVisibility: () => setState(() => _obscurePassword = !_obscurePassword),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return "يرجى إدخال كلمة المرور";
+            }
+            if (value.length < 6) {
+              return "يجب أن تكون كلمة المرور 6 أحرف على الأقل";
+            }
+            return null;
+          },
         ),
       ],
     );
   }
 
-  Widget _buildTextField({required String hint, required IconData icon, bool isPassword = false, double height = 45, TextInputType keyboardType = TextInputType.text}) {
-    return Container(
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool isPassword = false,
+    bool obscureText = false,
+    double height = 45,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+    VoidCallback? onToggleVisibility,
+  }) {
+    return SizedBox(
       height: height,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFF1F3F5)),
-      ),
-      child: TextField(
-        obscureText: isPassword,
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
         keyboardType: keyboardType,
+        validator: validator,
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
           prefixIcon: Icon(icon, color: Colors.grey[400], size: 18),
           suffixIcon: isPassword
-              ? Icon(Icons.lock_outline, color: Colors.grey[400], size: 16)
+              ? IconButton(
+                  icon: Icon(
+                    obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: Colors.grey[400],
+                    size: 18,
+                  ),
+                  onPressed: onToggleVisibility,
+                )
               : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+          filled: true,
+          fillColor: const Color(0xFFF8F9FA),
+          contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFF1F3F5)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFF1F3F5)),
+          ),
+          errorStyle: const TextStyle(fontSize: 11, height: 0.8),
+        ),
+      ),
+    );
+  }
+
+  void _showForgotPasswordDialog(BuildContext context, Color primaryColor) {
+    final resetEmailController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.lock_reset_rounded, size: 50, color: primaryColor),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "استعادة كلمة المرور",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                "أدخل بريدك الإلكتروني لتلقي رابط إعادة تعيين كلمة المرور الخاصة بك.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.black87, height: 1.5),
+              ),
+              const SizedBox(height: 24),
+              _buildTextField(
+                controller: resetEmailController,
+                hint: "البريد الإلكتروني",
+                icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+                height: 52,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // هنا سيتم إضافة منطق Firebase لاحقاً
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("سيتم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني"),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  child: const Text("إرسال الرابط", style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 40),
+                ),
+                child: const Text("إلغاء", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -148,10 +282,13 @@ class _SignInScreenState extends State<SignInScreen> {
   Widget _buildForgotPassword(Color secondaryColor) {
     return Align(
       alignment: Alignment.centerRight,
-      child: Text(
-        "نسيت كلمة المرور؟",
-        style: TextStyle(
-            color: secondaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+      child: GestureDetector(
+        onTap: () => _showForgotPasswordDialog(context, Theme.of(context).primaryColor),
+        child: Text(
+          "نسيت كلمة المرور؟",
+          style: TextStyle(
+              color: secondaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -161,90 +298,9 @@ class _SignInScreenState extends State<SignInScreen> {
       width: double.infinity,
       height: 45,
       child: ElevatedButton(
-        onPressed: () => Navigator.pushReplacementNamed(context, '/stages'),
+        onPressed: _submit,
         child: const Text("تسجيل الدخول",
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return const Row(
-      children: [
-        Expanded(child: Divider()),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10),
-          child: Text("أو", style: TextStyle(color: Colors.grey, fontSize: 11)),
-        ),
-        Expanded(child: Divider()),
-      ],
-    );
-  }
-
-  Widget _buildSocialButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildSocialButton(
-            label: "Google",
-            iconPath: AppAssets.google,
-            onTap: () {},
-          ),
-        ),
-        const SizedBox(width: 15),
-        Expanded(
-          child: _buildSocialButton(
-            label: "Facebook",
-            iconPath: AppAssets.facebook,
-            onTap: () {},
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSocialButton({required String label, required String iconPath, required VoidCallback onTap}) {
-    return Container(
-      height: 42,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFF1F3F5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A2238),
-                ),
-              ),
-              Positioned(
-                right: 12,
-                child: Image.asset(
-                  iconPath,
-                  height: 22,
-                  errorBuilder: (c, e, s) => const Icon(Icons.error_outline, size: 18),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
