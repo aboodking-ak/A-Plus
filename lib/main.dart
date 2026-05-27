@@ -13,6 +13,8 @@ import 'screens/english/EssaysScreen.dart';
 import 'screens/biology/BiologyDiagramsScreen.dart';
 import 'screens/tools/CountdownScreen.dart';
 import 'screens/tools/NotesScreen.dart';
+import 'screens/tools/PomodoroScreen.dart';
+import 'screens/tools/MindMapsScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -57,6 +59,8 @@ class MyApp extends StatelessWidget {
         '/biology_diagrams': (context) => const BiologyDiagramsScreen(),
         '/countdown': (context) => const CountdownScreen(),
         '/notes': (context) => const NotesScreen(),
+        '/pomodoro': (context) => const PomodoroScreen(),
+        '/mind_maps': (context) => const MindMapsScreen(),
       },
     );
   }

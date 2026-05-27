@@ -752,7 +752,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader("الأدوات التعليمية", "2 أداة"),
+          _buildSectionHeader("الأدوات التعليمية", "4 أدوات"),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: ListView(
@@ -760,13 +760,23 @@ class _HomePageScreenState extends State<HomePageScreen> {
               physics: const NeverScrollableScrollPhysics(),
               children: [
                 _buildToolListItem(
-                    label: 'العد التنازلي',
-                    icon: Icons.timer_rounded,
+                    label: 'بومودورو',
+                    icon: Icons.timer_outlined,
+                    primaryColor: primaryColor,
+                    secondaryColor: secondaryColor),
+                _buildToolListItem(
+                    label: 'خرائط ذهنية',
+                    icon: Icons.hub_outlined,
                     primaryColor: primaryColor,
                     secondaryColor: secondaryColor),
                 _buildToolListItem(
                     label: 'ملاحظات',
                     icon: Icons.note_alt_rounded,
+                    primaryColor: primaryColor,
+                    secondaryColor: secondaryColor),
+                _buildToolListItem(
+                    label: 'العد التنازلي',
+                    icon: Icons.timer_rounded,
                     primaryColor: primaryColor,
                     secondaryColor: secondaryColor),
               ],
@@ -1584,6 +1594,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
               Navigator.pushNamed(context, '/countdown');
             } else if (label == 'ملاحظات') {
               Navigator.pushNamed(context, '/notes');
+            } else if (label == 'بومودورو') {
+              Navigator.pushNamed(context, '/pomodoro');
+            } else if (label == 'خرائط ذهنية') {
+              Navigator.pushNamed(context, '/mind_maps');
             }
           },
           child: Padding(
