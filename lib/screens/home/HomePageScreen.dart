@@ -527,24 +527,24 @@ class _HomePageScreenState extends State<HomePageScreen> {
         children: [
           _buildMotivationalSection(),
           _buildSectionHeader("المواد الدراسية", "${subjects.length} مواد"),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              clipBehavior: Clip.none,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 1.4,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  clipBehavior: Clip.none,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 1.4, // العودة للنسبة الأصلية
+                    crossAxisSpacing: 15,
+                    mainAxisSpacing: 15,
+                  ),
+                  itemCount: subjects.length,
+                  itemBuilder: (context, index) {
+                    return _buildSubjectCard(subjects[index]);
+                  },
+                ),
               ),
-              itemCount: subjects.length,
-              itemBuilder: (context, index) {
-                return _buildSubjectCard(subjects[index]);
-              },
-            ),
-          ),
           const SizedBox(height: 100),
         ],
       ),
@@ -1434,6 +1434,17 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   );
                 },
               ),
+              // قسم أحكام التلاوة (فقط لمادة الإسلامية)
+              if (subject['label'] == 'الإسلامية')
+                _buildBottomSheetItem(
+                  "أحكام التلاوة",
+                  Icons.menu_book_rounded,
+                  primaryColor,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/tajweed_rules');
+                  },
+                ),
               // قسم سور الحفظ (فقط لمادة الإسلامية)
               if (subject['label'] == 'الإسلامية')
                 _buildBottomSheetItem(
@@ -1443,6 +1454,17 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.pushNamed(context, '/surahs');
+                  },
+              ),
+              // قسم قصائد الأدب (فقط لمادة العربية)
+              if (subject['label'] == 'العربية')
+                _buildBottomSheetItem(
+                  "قصائد الأدب",
+                  Icons.auto_stories_rounded,
+                  primaryColor,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/poems');
                   },
                 ),
               // قسم الإنشاءات (فقط لمادة الإنكليزي)
@@ -1623,6 +1645,15 @@ class _HomePageScreenState extends State<HomePageScreen> {
     final primaryColor = Theme.of(context).colorScheme.primary;
     final secondaryColor = Theme.of(context).colorScheme.secondary;
 
+    int sectionCount = 0;
+    if (subject['pdfs'] != null) sectionCount += (subject['pdfs'] as List).length;
+    sectionCount += 2; // الاختبارات + الوزاريات
+    
+    if (subject['label'] == 'الإسلامية') sectionCount += 2;
+    else if (subject['label'] == 'العربية') sectionCount += 1;
+    else if (subject['label'] == 'الإنكليزي') sectionCount += 1;
+    else if (subject['label'] == 'الأحياء') sectionCount += 1;
+
     return GestureDetector(
       onTap: () => _showSubjectDetails(context, subject),
       child: Container(
@@ -1644,14 +1675,29 @@ class _HomePageScreenState extends State<HomePageScreen> {
               flex: 2,
               child: Padding(
                 padding: const EdgeInsets.only(right: 15),
-                child: Text(
-                  subject['label']!,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                  ),
-                  textAlign: TextAlign.right,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      subject['label']!,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "$sectionCount أقسام",
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[500],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
