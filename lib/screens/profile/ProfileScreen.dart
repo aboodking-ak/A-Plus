@@ -63,7 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
+                  color: primaryColor.withAlpha(25),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.edit_note_rounded, size: 40, color: primaryColor),
@@ -186,7 +186,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   image: _profileImagePath != null
                     ? DecorationImage(image: FileImage(File(_profileImagePath!)), fit: BoxFit.cover)
                     : null,
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withAlpha(25),
                 ),
                 child: _profileImagePath == null
                     ? Center(
@@ -247,7 +247,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.redAccent.withOpacity(0.1),
+                  color: Colors.redAccent.withAlpha(25),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.logout_rounded, size: 50, color: Colors.redAccent),
@@ -310,7 +310,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withAlpha(25),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.delete_forever_rounded, size: 50, color: Colors.red),
@@ -374,95 +374,135 @@ class _ProfileScreenState extends State<ProfileScreen> {
           foregroundColor: Colors.white,
           elevation: 0,
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
+        body: SafeArea(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 20),
-              Center(
-                child: Stack(
-                  children: [
-                    GestureDetector(
-                      onTap: _showFullImageDialog,
-                      child: Hero(
-                        tag: 'profile_pic',
-                        child: CircleAvatar(
-                          radius: 60,
-                          backgroundColor: secondaryColor.withAlpha(25),
-                          backgroundImage: _profileImagePath != null ? FileImage(File(_profileImagePath!)) : null,
-                          child: _profileImagePath == null
-                              ? Text(
-                                  _getInitials(userName),
-                                  style: TextStyle(
-                                      fontSize: 40,
-                                      fontWeight: FontWeight.bold,
-                                      color: primaryColor),
-                                )
-                              : null,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 5,
-                      right: 5,
-                      child: GestureDetector(
-                        onTap: _pickImage,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(40),
-                                blurRadius: 5,
-                                offset: const Offset(0, 2),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+                      Center(
+                        child: Stack(
+                          children: [
+                            GestureDetector(
+                              onTap: _showFullImageDialog,
+                              child: Hero(
+                                tag: 'profile_pic',
+                                child: CircleAvatar(
+                                  radius: 60,
+                                  backgroundColor: secondaryColor.withAlpha(25),
+                                  backgroundImage: _profileImagePath != null ? FileImage(File(_profileImagePath!)) : null,
+                                  child: _profileImagePath == null
+                                      ? Text(
+                                          _getInitials(userName),
+                                          style: TextStyle(
+                                              fontSize: 40,
+                                              fontWeight: FontWeight.bold,
+                                              color: primaryColor),
+                                        )
+                                      : null,
+                                ),
                               ),
-                            ],
+                            ),
+                            Positioned(
+                              bottom: 5,
+                              right: 5,
+                              child: GestureDetector(
+                                onTap: _pickImage,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withAlpha(40),
+                                        blurRadius: 5,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(Icons.camera_alt_outlined, color: primaryColor, size: 20),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      InkWell(
+                        onTap: _editNameDialog,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildProfileData("الاسم الكامل", userName, primaryColor),
+                            Icon(Icons.edit_note_rounded, color: secondaryColor, size: 24),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 30),
+                      _buildProfileData("البريد الإلكتروني", userEmail, primaryColor),
+                      const Divider(height: 30),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildProfileData("المرحلة الدراسية والفرع", selectedStage, primaryColor),
+                          TextButton.icon(
+                            onPressed: () => Navigator.pushNamed(context, '/stages'),
+                            icon: Icon(Icons.edit_note_rounded, color: secondaryColor, size: 20),
+                            label: Text("تبديل",
+                                style: TextStyle(color: secondaryColor, fontWeight: FontWeight.bold)),
                           ),
-                          child: Icon(Icons.camera_alt_outlined, color: primaryColor, size: 20),
+                        ],
+                      ),
+                      const Divider(height: 30),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withAlpha(50),
+                                blurRadius: 5,
+                                offset: const Offset(0, 0)),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _showLogoutDialog(context),
+                            borderRadius: BorderRadius.circular(15),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 15),
+                              child: Center(
+                                child: Text("تسجيل الخروج",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.redAccent,
+                                        fontSize: 16)),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-              InkWell(
-                onTap: _editNameDialog,
-                borderRadius: BorderRadius.circular(10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildProfileData("الاسم الكامل", userName, primaryColor),
-                    Icon(Icons.edit_note_rounded, color: secondaryColor, size: 24),
-                  ],
-                ),
-              ),
-              const Divider(height: 30),
-              _buildProfileData("البريد الإلكتروني", userEmail, primaryColor),
-              const Divider(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildProfileData("المرحلة الدراسية والفرع", selectedStage, primaryColor),
-                  TextButton.icon(
-                    onPressed: () => Navigator.pushNamed(context, '/stages'),
-                    icon: Icon(Icons.edit_note_rounded, color: secondaryColor, size: 20),
-                    label: Text("تبديل",
-                        style: TextStyle(color: secondaryColor, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-              const Divider(height: 30),
-              const SizedBox(height: 40),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
+                    const SizedBox(width: 15),
+                    Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.redAccent,
                         borderRadius: BorderRadius.circular(15),
                         boxShadow: [
                           BoxShadow(
@@ -474,48 +514,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          onTap: () => _showLogoutDialog(context),
+                          onTap: () => _showDeleteAccountDialog(context),
                           borderRadius: BorderRadius.circular(15),
                           child: const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 15),
-                            child: Center(
-                              child: Text("تسجيل الخروج",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.redAccent,
-                                      fontSize: 16)),
-                            ),
+                            padding: EdgeInsets.all(15),
+                            child: Icon(Icons.delete_outline_rounded,
+                                color: Colors.white, size: 24),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 15),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withAlpha(50),
-                            blurRadius: 5,
-                            offset: const Offset(0, 0)),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => _showDeleteAccountDialog(context),
-                        borderRadius: BorderRadius.circular(15),
-                        child: const Padding(
-                          padding: EdgeInsets.all(15),
-                          child: Icon(Icons.delete_outline_rounded,
-                              color: Colors.white, size: 24),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

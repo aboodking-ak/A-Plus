@@ -39,7 +39,6 @@ flutter:
     - assets/icons/stages/
     - assets/icons/subjects/
     - assets/icons/logo/
-    - assets/icons/drawer/
     - assets/pdfs/subjects/
 
   fonts:

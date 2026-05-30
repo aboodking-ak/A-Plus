@@ -17,7 +17,6 @@ class HomePageScreen extends StatefulWidget {
 class _HomePageScreenState extends State<HomePageScreen> {
   // منطق العد التنازلي
   late Timer _timer;
-  late Timer _tipTimer;
   Duration _timeLeft = const Duration(days: 45, hours: 12, minutes: 30);
   
   int _currentTipIndex = 0;
@@ -43,8 +42,11 @@ class _HomePageScreenState extends State<HomePageScreen> {
     return name.trim().substring(0, 1).toUpperCase();
   }
 
-  // Gemini AI Variables
+  // Gemini AI & Search Variables
   final TextEditingController _chatController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+  bool _isTipVisible = false;
   final List<Map<String, dynamic>> _chatMessages = [];
   bool _isTyping = false;
   late GenerativeModel _model;
@@ -58,15 +60,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
     _loadUserData();
     _startCountdown();
     _initGemini();
-    
-    // بدء مؤقت النصائح تلقائياً كل 6 ثوانٍ
-    _tipTimer = Timer.periodic(const Duration(seconds: 6), (timer) {
-      if (mounted) {
-        setState(() {
-          _currentTipIndex = (_currentTipIndex + 1) % _tips.length;
-        });
-      }
-    });
   }
 
   Future<void> _loadUserData() async {
@@ -103,7 +96,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
+                  color: primaryColor.withAlpha(25),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.edit_note_rounded, size: 40, color: primaryColor),
@@ -148,7 +141,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
                           setState(() {
                             userName = newName;
                           });
-                          if (mounted) Navigator.pop(context);
+                          if (mounted) {
+                            Navigator.pop(context);
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -259,7 +254,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
   @override
   void dispose() {
     _timer.cancel();
-    _tipTimer.cancel();
+    _searchController.dispose();
+    _chatController.dispose();
     super.dispose();
   }
 
@@ -369,8 +365,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final secondaryColor = theme.colorScheme.secondary;
-    final selectedStage =
-        ModalRoute.of(context)?.settings.arguments as String? ?? "غير محدد";
 
     return DefaultTabController(
       length: 5,
@@ -448,7 +442,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
             child: TabBarView(
               // تم ترك خاصية physics افتراضية للسماح بالسحب بين التبويبات
               children: [
-                _buildHomeView(),
+                _buildHomeView(primaryColor, secondaryColor),
                 _buildAiChatView(primaryColor),
                 _buildToolsView(primaryColor, secondaryColor),
                 _buildNotificationsView(primaryColor, secondaryColor),
@@ -636,126 +630,300 @@ class _HomePageScreenState extends State<HomePageScreen> {
     );
   }
 
-  Widget _buildHomeView() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          _buildMotivationalSection(),
-          _buildSectionHeader("المواد الدراسية", "${subjects.length} مواد"),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  clipBehavior: Clip.none,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 1.4, // العودة للنسبة الأصلية
-                    crossAxisSpacing: 15,
-                    mainAxisSpacing: 15,
+  Widget _buildHomeView(Color primaryColor, Color secondaryColor) {
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildSearchBar(),
+              if (_searchQuery.trim().isEmpty) ...[
+                _buildSectionHeader("المواد الدراسية", "${subjects.length} مواد"),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    clipBehavior: Clip.none,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 1.4,
+                      crossAxisSpacing: 15,
+                      mainAxisSpacing: 15,
+                    ),
+                    itemCount: subjects.length,
+                    itemBuilder: (context, index) {
+                      return _buildSubjectCard(subjects[index]);
+                    },
                   ),
-                  itemCount: subjects.length,
-                  itemBuilder: (context, index) {
-                    return _buildSubjectCard(subjects[index]);
-                  },
                 ),
+              ] else
+                _buildSearchResults(primaryColor, secondaryColor),
+              const SizedBox(height: 100),
+            ],
+          ),
+        ),
+        _buildFloatingTip(primaryColor, secondaryColor),
+      ],
+    );
+  }
+
+  Widget _buildSearchResults(Color primaryColor, Color secondaryColor) {
+    final query = _searchQuery.trim().toLowerCase();
+    final List<Map<String, dynamic>> results = [];
+
+    for (var subject in subjects) {
+      final subjectLabel = subject['label'].toString();
+      
+      // 1. البحث في الكتب (PDFs)
+      final pdfs = subject['pdfs'] as List<Map<String, dynamic>>;
+      for (var pdf in pdfs) {
+        final title = pdf['title'].toString();
+        if (title.toLowerCase().contains(query) || subjectLabel.toLowerCase().contains(query)) {
+          results.add({
+            'title': "كتاب $subjectLabel - $title",
+            'type': 'كتاب',
+            'icon': Icons.menu_book_rounded,
+            'onTap': () => Navigator.pushNamed(context, '/pdf_viewer', arguments: {'title': title, 'pdfPath': pdf['path']}),
+          });
+        }
+      }
+
+      // 2. البحث في الاختبارات والوزاريات
+      if ("اختبارات $subjectLabel".contains(query) || "الاختبارات".contains(query)) {
+        results.add({
+          'title': "اختبارات $subjectLabel",
+          'type': 'اختبارات',
+          'icon': Icons.assignment_turned_in_rounded,
+          'onTap': () => Navigator.pushNamed(context, '/exams', arguments: {'subjectName': subjectLabel}),
+        });
+      }
+      if ("وزاريات $subjectLabel".contains(query) || "الوزاريات".contains(query)) {
+        results.add({
+          'title': "وزاريات $subjectLabel",
+          'type': 'وزاريات',
+          'icon': Icons.account_balance_rounded,
+          'onTap': () => Navigator.pushNamed(context, '/ministerials', arguments: {'subjectName': subjectLabel}),
+        });
+      }
+
+      // 3. الأقسام الخاصة
+      if (subjectLabel == 'الإسلامية') {
+        if ("أحكام التلاوة".contains(query)) {
+          results.add({
+            'title': "أحكام التلاوة - الإسلامية",
+            'type': 'قسم',
+            'icon': Icons.menu_book_rounded,
+            'onTap': () => Navigator.pushNamed(context, '/tajweed_rules'),
+          });
+        }
+        if ("سور الحفظ".contains(query)) {
+          results.add({
+            'title': "سور الحفظ - الإسلامية",
+            'type': 'قسم',
+            'icon': Icons.menu_book_outlined,
+            'onTap': () => Navigator.pushNamed(context, '/surahs'),
+          });
+        }
+      }
+      if (subjectLabel == 'العربية' && "قصائد الأدب".contains(query)) {
+        results.add({
+          'title': "قصائد الأدب - العربية",
+          'type': 'قسم',
+          'icon': Icons.auto_stories_rounded,
+          'onTap': () => Navigator.pushNamed(context, '/poems'),
+        });
+      }
+      if (subjectLabel == 'الإنكليزي' && "الإنشاءات".contains(query)) {
+        results.add({
+          'title': "الإنشاءات - الإنكليزي",
+          'type': 'قسم',
+          'icon': Icons.edit_note_rounded,
+          'onTap': () => Navigator.pushNamed(context, '/essays'),
+        });
+      }
+      if (subjectLabel == 'الأحياء' && "رسومات الأحياء".contains(query)) {
+        results.add({
+          'title': "رسومات الأحياء",
+          'type': 'قسم',
+          'icon': Icons.image_search_rounded,
+          'onTap': () => Navigator.pushNamed(context, '/biology_diagrams'),
+        });
+      }
+    }
+
+    if (results.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 50),
+        child: Column(
+          children: [
+            Icon(Icons.search_off_rounded, size: 80, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            const Text("لا توجد نتائج بحث مطابقة", style: TextStyle(color: Colors.grey, fontSize: 16)),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader("نتائج البحث", "${results.length} نتيجة"),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          itemCount: results.length,
+          itemBuilder: (context, index) {
+            final item = results[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [BoxShadow(color: Colors.black.withAlpha(20), blurRadius: 10, offset: const Offset(0, 4))],
+                border: Border.all(color: Colors.grey[100]!),
               ),
-          const SizedBox(height: 100),
-        ],
+              child: ListTile(
+                onTap: item['onTap'],
+                leading: CircleAvatar(backgroundColor: primaryColor.withAlpha(20), child: Icon(item['icon'], color: primaryColor, size: 22)),
+                title: Text(item['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                subtitle: Text(item['type'], style: TextStyle(color: secondaryColor, fontSize: 12, fontWeight: FontWeight.w500)),
+                trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey[400]),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: (value) {
+            setState(() {
+              _searchQuery = value;
+            });
+          },
+          decoration: const InputDecoration(
+            hintText: "ابحث عن مادة، كتاب، أو اختبار...",
+            prefixIcon: Icon(Icons.search_rounded, color: Colors.grey),
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.symmetric(vertical: 15),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildMotivationalSection() {
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    final secondaryColor = Theme.of(context).colorScheme.secondary;
+  Widget _buildFloatingTip(Color primaryColor, Color secondaryColor) {
     final currentTip = _tips[_currentTipIndex];
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      height: 140, // زيادة الطول قليلاً لاستيعاب النصوص المتغيرة
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [primaryColor, primaryColor.withAlpha(200)],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-        ),
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withAlpha(60),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
+    return Stack(
+      children: [
+        // فقاعة النصيحة - تظهر فوق الزر
+        if (_isTipVisible)
           Positioned(
-            left: -15,
-            bottom: -15,
-            child: Icon(Icons.auto_awesome_rounded,
-                size: 100, color: Colors.white.withAlpha(20)),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        color: secondaryColor.withAlpha(40),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        _getTipIcon(currentTip['type']!),
-                        color: secondaryColor,
-                        size: 18,
-                      ),
+            bottom: 90, // مسافة كافية فوق الزر العائم
+            left: 20,
+            child: GestureDetector(
+              onTap: () => setState(() => _isTipVisible = false),
+              child: Container(
+                width: 280,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryColor.withAlpha(40),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
-                    const SizedBox(width: 10),
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 500),
-                      child: Text(
-                        "${currentTip['type']} اليوم",
-                        key: ValueKey<int>(_currentTipIndex),
-                        style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold),
+                  ],
+                  border: Border.all(color: primaryColor.withAlpha(30), width: 1),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: secondaryColor.withAlpha(30),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _getTipIcon(currentTip['type']!),
+                            color: secondaryColor,
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          "${currentTip['type']} اليوم",
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      currentTip['text']!,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 14,
+                        height: 1.5,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 800),
-                    transitionBuilder: (Widget child, Animation<double> animation) {
-                      return FadeTransition(opacity: animation, child: child);
-                    },
-                    child: Text(
-                      currentTip['text']!,
-                      key: ValueKey<int>(_currentTipIndex),
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          height: 1.5),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ],
-      ),
+        // الزر العائم - موقعه ثابت تماماً
+        Positioned(
+          bottom: 20,
+          left: 20,
+          child: FloatingActionButton(
+            onPressed: () {
+              setState(() {
+                if (!_isTipVisible) {
+                  // تغيير المحتوى فقط عند الفتح
+                  _currentTipIndex = (_currentTipIndex + 1) % _tips.length;
+                }
+                _isTipVisible = !_isTipVisible;
+              });
+            },
+            backgroundColor: primaryColor,
+            elevation: 8,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: Icon(
+                _isTipVisible ? Icons.close_rounded : Icons.lightbulb_rounded,
+                key: ValueKey<bool>(_isTipVisible),
+                color: secondaryColor,
+                size: 30,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1061,7 +1229,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   image: _profileImagePath != null
                     ? DecorationImage(image: FileImage(File(_profileImagePath!)), fit: BoxFit.cover)
                     : null,
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withAlpha(25),
                 ),
                 child: _profileImagePath == null
                     ? Center(
@@ -1108,118 +1276,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
     );
   }
 
-  Widget _buildProfileView(
-      String stage, Color primaryColor, Color secondaryColor) {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 20),
-          Center(
-            child: Stack(
-              children: [
-                GestureDetector(
-                  onTap: _showFullImageDialog,
-                  child: Hero(
-                    tag: 'profile_pic',
-                    child: CircleAvatar(
-                      radius: 55, // تكبير الحجم قليلاً
-                      backgroundColor: secondaryColor.withAlpha(25),
-                      backgroundImage: _profileImagePath != null ? FileImage(File(_profileImagePath!)) : null,
-                      child: _profileImagePath == null
-                          ? Text(
-                              _getInitials(userName),
-                              style: TextStyle(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.bold,
-                                  color: primaryColor),
-                            )
-                          : null,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 2,
-                  right: 2,
-                  child: GestureDetector(
-                    onTap: _pickImage,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white, // خلفية بيضاء
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(40),
-                            blurRadius: 5,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Icon(Icons.camera_alt_outlined, color: primaryColor, size: 20), // أيقونة تعديل ولون أساسي
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 40),
-          InkWell(
-            onTap: _editNameDialog,
-            borderRadius: BorderRadius.circular(10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildProfileData("الاسم الكامل", userName, primaryColor),
-                Icon(Icons.edit_note_rounded, color: secondaryColor, size: 24),
-              ],
-            ),
-          ),
-          const Divider(height: 30),
-          _buildProfileData("البريد الإلكتروني", userEmail, primaryColor), // <--- هنا الايميل
-          const Divider(height: 30),
-          _buildStageData(stage, primaryColor, secondaryColor),
-          const Divider(height: 30),
-          const Spacer(),
-          _buildAccountActions(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileData(String hint, String value, Color primaryColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(hint, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-        const SizedBox(height: 4),
-        Text(value,
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: primaryColor)),
-      ],
-    );
-  }
-
-  Widget _buildStageData(
-      String stage, Color primaryColor, Color secondaryColor) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _buildProfileData("المرحلة الدراسية والفرع", stage, primaryColor),
-        TextButton.icon(
-          onPressed: () => Navigator.pushReplacementNamed(context, '/stages'),
-          icon: Icon(Icons.edit_note_rounded, color: secondaryColor, size: 20),
-          label: Text("تبديل",
-              style:
-                  TextStyle(color: secondaryColor, fontWeight: FontWeight.bold)),
-        ),
-      ],
-    );
-  }
-
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -1234,7 +1290,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.redAccent.withOpacity(0.1),
+                  color: Colors.redAccent.withAlpha(25),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.logout_rounded, size: 50, color: Colors.redAccent),
@@ -1298,7 +1354,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withAlpha(25),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.delete_forever_rounded, size: 50, color: Colors.red),
@@ -1451,8 +1507,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
     final secondaryColor = Theme.of(context).colorScheme.secondary;
     final List<Map<String, String>> pdfs =
         List<Map<String, String>>.from(subject['pdfs']);
-    final List<Map<String, String>> exams =
-        List<Map<String, String>>.from(subject['exams'] ?? []);
 
     showModalBottomSheet(
       context: context,
@@ -1612,26 +1666,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
     );
   }
 
-  Widget _buildSubHeader(String title, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: Colors.grey[600]),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBottomSheetItem(String title, IconData icon, Color color,
       {VoidCallback? onTap}) {
     return Container(
@@ -1761,13 +1795,20 @@ class _HomePageScreenState extends State<HomePageScreen> {
     final secondaryColor = Theme.of(context).colorScheme.secondary;
 
     int sectionCount = 0;
-    if (subject['pdfs'] != null) sectionCount += (subject['pdfs'] as List).length;
+    if (subject['pdfs'] != null) {
+      sectionCount += (subject['pdfs'] as List).length;
+    }
     sectionCount += 2; // الاختبارات + الوزاريات
     
-    if (subject['label'] == 'الإسلامية') sectionCount += 2;
-    else if (subject['label'] == 'العربية') sectionCount += 1;
-    else if (subject['label'] == 'الإنكليزي') sectionCount += 1;
-    else if (subject['label'] == 'الأحياء') sectionCount += 1;
+    if (subject['label'] == 'الإسلامية') {
+      sectionCount += 2;
+    } else if (subject['label'] == 'العربية') {
+      sectionCount += 1;
+    } else if (subject['label'] == 'الإنكليزي') {
+      sectionCount += 1;
+    } else if (subject['label'] == 'الأحياء') {
+      sectionCount += 1;
+    }
 
     return GestureDetector(
       onTap: () => _showSubjectDetails(context, subject),
