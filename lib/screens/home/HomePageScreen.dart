@@ -379,31 +379,40 @@ class _HomePageScreenState extends State<HomePageScreen> {
         child: Scaffold(
           backgroundColor: Colors.white,
           resizeToAvoidBottomInset: false, // الحل الاحترافي: منع الشاشة من الانضغاط
+          drawer: _buildDrawer(context, primaryColor, secondaryColor),
           appBar: AppBar(
             toolbarHeight: 80,
             backgroundColor: primaryColor,
-            elevation: 4, // رفع قيمة الظل ليكون حاداً وواضحاً
-            shadowColor: Colors.black, // لون ظل أسود صريح ليكون حاداً
-            surfaceTintColor: Colors.transparent, // منع تغير اللون عند التمرير في Material 3
+            elevation: 4,
+            shadowColor: Colors.black,
+            surfaceTintColor: Colors.transparent,
             centerTitle: false,
+            titleSpacing: 0, // إزالة المسافة التلقائية ليكون النص قريباً من الأيقونة
             systemOverlayStyle: SystemUiOverlayStyle.light,
-
+            leading: Builder(
+              builder: (context) => IconButton(
+                padding: const EdgeInsets.only(right: 8), // إضافة مسافة بسيطة للحافة
+                icon: Image.asset(
+                  AppAssets.drawerIcon,
+                  color: Colors.white,
+                  height: 32, // تكبير الحجم ليكون واضحاً ومتناسقاً
+                ),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+            ),
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(30),
                 bottomRight: Radius.circular(30),
               ),
             ),
-            title: Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildAppBarGreeting(secondaryColor),
-                  _buildAppBarLogo(secondaryColor),
-                ],
+            title: _buildGreetingText(secondaryColor),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(left: 15),
+                child: _buildUserAvatar(),
               ),
-            ),
+            ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(70),
               child: Container(
@@ -455,46 +464,155 @@ class _HomePageScreenState extends State<HomePageScreen> {
     );
   }
 
-  Widget _buildAppBarGreeting(Color secondaryColor) {
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 22,
-          backgroundColor: Colors.white.withAlpha(40),
-          backgroundImage: _profileImagePath != null ? FileImage(File(_profileImagePath!)) : null,
-          child: _profileImagePath == null
-              ? Text(
-                  _getInitials(userName),
-                  style: const TextStyle(
-                      color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                )
-              : null,
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(_getGreeting(),
-                style: const TextStyle(color: Colors.white70, fontSize: 12)),
-            Text.rich(
-              TextSpan(
-                children: [
-                  const TextSpan(
-                      text: "مرحباً، ",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold)),
-                  TextSpan(
-                      text: userName, // <--- المتغير هنا
-                      style: TextStyle(
-                          color: secondaryColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold)),
-                ],
+  Widget _buildUserAvatar() {
+    return GestureDetector(
+      onTap: () {
+        DefaultTabController.of(context).animateTo(5);
+      },
+      child: CircleAvatar(
+        radius: 22,
+        backgroundColor: Colors.white.withAlpha(40),
+        backgroundImage: _profileImagePath != null ? FileImage(File(_profileImagePath!)) : null,
+        child: _profileImagePath == null
+            ? Text(
+                _getInitials(userName),
+                style: const TextStyle(
+                    color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+              )
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context, Color primaryColor, Color secondaryColor) {
+    return Drawer(
+      backgroundColor: Colors.white,
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 50, 20, 30),
+            decoration: BoxDecoration(
+              color: primaryColor,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
               ),
             ),
-          ],
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Image.asset(AppAssets.logo, height: 60),
+                ),
+                const SizedBox(height: 15),
+                _buildAppBarLogo(secondaryColor),
+                const SizedBox(height: 5),
+                const Text(
+                  "دليلك للنجاح والتفوق",
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildDrawerItem(
+            icon: Icons.share_rounded,
+            title: "مشاركة التطبيق",
+            color: primaryColor,
+            onTap: () {
+              // منطق المشاركة
+            },
+          ),
+          _buildDrawerItem(
+            icon: Icons.star_rate_rounded,
+            title: "تقييم التطبيق",
+            color: primaryColor,
+            onTap: () {
+              // منطق التقييم
+            },
+          ),
+          _buildDrawerItem(
+            icon: Icons.report_problem_rounded,
+            title: "إبلاغ عن مشكلة",
+            color: primaryColor,
+            onTap: () {
+              // منطق الإبلاغ
+            },
+          ),
+          const Divider(indent: 20, endIndent: 20),
+          _buildDrawerItem(
+            icon: Icons.info_rounded,
+            title: "عن التطبيق",
+            color: primaryColor,
+            onTap: () {
+              // معلومات عن التطبيق
+            },
+          ),
+          const Spacer(),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Text(
+              "الإصدار 1.0.0",
+              style: TextStyle(color: Colors.grey[400], fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withAlpha(20),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: color, size: 22),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+      ),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildGreetingText(Color secondaryColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(_getGreeting(),
+            style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        const SizedBox(height: 2),
+        Text.rich(
+          TextSpan(
+            children: [
+              const TextSpan(
+                  text: "مرحباً، ",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold)),
+              TextSpan(
+                  text: userName,
+                  style: TextStyle(
+                      color: secondaryColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold)),
+            ],
+          ),
         ),
       ],
     );

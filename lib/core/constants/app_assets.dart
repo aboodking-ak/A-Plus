@@ -2,6 +2,9 @@ class AppAssets {
   // Logo
   static const String logo = 'assets/icons/logo/logo.png';
 
+  // Drawer
+  static const String drawerIcon = 'assets/icons/drawer/drawer.png';
+
   // Auth Icons
   static const String google = 'assets/icons/auth/google.png';
   static const String facebook = 'assets/icons/auth/facebook.png';
