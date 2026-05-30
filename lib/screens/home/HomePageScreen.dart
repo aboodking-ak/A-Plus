@@ -373,7 +373,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
         ModalRoute.of(context)?.settings.arguments as String? ?? "غير محدد";
 
     return DefaultTabController(
-      length: 6,
+      length: 5,
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Scaffold(
@@ -391,11 +391,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
             systemOverlayStyle: SystemUiOverlayStyle.light,
             leading: Builder(
               builder: (context) => IconButton(
-                padding: const EdgeInsets.only(right: 8), // إضافة مسافة بسيطة للحافة
-                icon: Image.asset(
-                  AppAssets.drawerIcon,
+                icon: const Icon(
+                  Icons.menu_rounded,
                   color: Colors.white,
-                  height: 32, // تكبير الحجم ليكون واضحاً ومتناسقاً
+                  size: 32,
                 ),
                 onPressed: () => Scaffold.of(context).openDrawer(),
               ),
@@ -439,7 +438,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     Tab(icon: Icon(Icons.handyman_rounded, size: 26)),
                     Tab(icon: Icon(Icons.notifications_none_rounded, size: 26)),
                     Tab(icon: Icon(Icons.emoji_events_rounded, size: 26)),
-                    Tab(icon: Icon(Icons.person_outline_rounded, size: 26)),
                   ],
                 ),
               ),
@@ -455,7 +453,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
                 _buildToolsView(primaryColor, secondaryColor),
                 _buildNotificationsView(primaryColor, secondaryColor),
                 _buildLeaderboardView(primaryColor, secondaryColor),
-                _buildProfileView(selectedStage, primaryColor, secondaryColor),
               ],
             ),
           ),
@@ -467,7 +464,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
   Widget _buildUserAvatar() {
     return GestureDetector(
       onTap: () {
-        DefaultTabController.of(context).animateTo(5);
+        Navigator.pushNamed(context, '/profile').then((_) => _loadUserData());
       },
       child: CircleAvatar(
         radius: 22,
