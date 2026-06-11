@@ -37,6 +37,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
   String userEmail = "user@email.com";
   String? _profileImagePath;
   String? selectedStage;
+  bool isAdsRemoved = false;
+  bool isAiSubscribed = false;
+  int _aiMessagesCount = 0;
 
   String _getInitials(String name) {
     if (name.isEmpty) return "S";
@@ -54,8 +57,14 @@ class _HomePageScreenState extends State<HomePageScreen> {
   late ChatSession _chat;
 
   @override
+  @override
   void initState() {
     super.initState();
+    // تصفير القيم عند الدخول لأول مرة فقط (للتجربة)
+    isAdsRemoved = false;
+    isAiSubscribed = false;
+    _aiMessagesCount = 0;
+
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: SystemUiOverlay.values);
     _loadUserData();
@@ -214,17 +223,26 @@ class _HomePageScreenState extends State<HomePageScreen> {
   }
 
   Future<void> _sendMessage() async {
+    if (!isAiSubscribed && _aiMessagesCount >= 3) {
+      _showSubscriptionSheet();
+      return;
+    }
+
     final message = _chatController.text.trim();
     if (message.isEmpty) return;
 
     setState(() {
       _chatMessages.add({'text': message, 'isMe': true});
       _chatController.clear();
+      if (!isAiSubscribed) {
+        _aiMessagesCount++; // زيادة العداد عند الإرسال
+      }
       _isTyping = true;
     });
 
     try {
       final response = await _chat.sendMessage(Content.text(message));
+      
       setState(() {
         _chatMessages.add({
           'text': response.text ?? 'عذراً، لم أستطع فهم ذلك.',
@@ -513,6 +531,153 @@ class _HomePageScreenState extends State<HomePageScreen> {
     );
   }
 
+  void _showSubscriptionSheet() {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40)),
+        ),
+        padding: const EdgeInsets.fromLTRB(25, 15, 25, 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
+            const SizedBox(height: 25),
+            const Text("باقات سند بلس", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text("اختر خطة التوفير وابدأ رحلة التفوق", style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+            const SizedBox(height: 35),
+            _buildPremiumCard(
+              title: "باقة الهدوء",
+              subtitle: "إزالة الإعلانات بالكامل",
+              price: "10,000 د.ع",
+              period: "شهرياً",
+              icon: Icons.block_rounded,
+              gradient: const [Color(0xFFFF5252), Color(0xFFFF1744)],
+              isSubscribed: isAdsRemoved,
+              onTap: () => _processPayment('ads'),
+            ),
+            const SizedBox(height: 20),
+            _buildPremiumCard(
+              title: "باقة الذكاء",
+              subtitle: "وصول غير محدود لـ AI سند",
+              price: "5,000 د.ع",
+              period: "شهرياً",
+              icon: Icons.auto_awesome_rounded,
+              gradient: const [Color(0xFF2979FF), Color(0xFF2962FF)],
+              isSubscribed: isAiSubscribed,
+              onTap: () => _processPayment('ai'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPremiumCard({required String title, required String subtitle, required String price, required String period, required IconData icon, required List<Color> gradient, required bool isSubscribed, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: isSubscribed ? null : onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: gradient),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [BoxShadow(color: gradient.first.withAlpha(80), blurRadius: 15, offset: const Offset(0, 8))],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.white.withAlpha(50), borderRadius: BorderRadius.circular(15)),
+              child: Icon(icon, color: Colors.white, size: 30),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(subtitle, style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 12)),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (isSubscribed)
+                  const Icon(Icons.check_circle_rounded, color: Colors.white, size: 30)
+                else ...[
+                  Text(price, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(period, style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 11)),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAiPaywall(Color primaryColor) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(color: Colors.blueAccent.withAlpha(20), shape: BoxShape.circle),
+              child: const Icon(Icons.lock_person_rounded, size: 80, color: Colors.blueAccent),
+            ),
+            const SizedBox(height: 25),
+            const Text("استنفدت الرسائل المجانية", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            const Text("لقد استخدمت 3 رسائل، اشترك الآن للحصول على وصول غير محدود للمساعد الذكي طوال الشهر.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, height: 1.5)),
+            const SizedBox(height: 30),
+            ElevatedButton.icon(
+              onPressed: _showSubscriptionSheet,
+              icon: const Icon(Icons.workspace_premium_rounded),
+              label: const Text("اشترك الآن بـ 5,000 د.ع"),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, minimumSize: const Size(double.infinity, 55), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _processPayment(String type) async {
+    // محاكاة عملية الدفع - هنا يتم ربط ZainCash أو أي بوابة دفع لاحقاً
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    await Future.delayed(const Duration(seconds: 2)); // محاكاة وقت الاتصال بالسيرفر
+    
+    if (type == 'ads') {
+      setState(() => isAdsRemoved = true);
+    } else {
+      setState(() => isAiSubscribed = true);
+    }
+    // ملاحظة: تم إزالة الكود الخاص بحفظ الحالة في SharedPreferences لجعلها تجريبية فقط
+
+    if (mounted) {
+      Navigator.pop(context); // إغلاق الـ Loading
+      Navigator.pop(context); // إغلاق الـ BottomSheet
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("تم تفعيل الاشتراك بنجاح! استمتع بالمميزات الجديدة"), backgroundColor: Colors.green),
+      );
+    }
+  }
+
   Widget _buildUserAvatar() {
     return GestureDetector(
       onTap: () {
@@ -552,76 +717,122 @@ class _HomePageScreenState extends State<HomePageScreen> {
       backgroundColor: Colors.white,
       child: Column(
         children: [
+          // رأس الدراور ملون وجذاب
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 50, 20, 30),
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 40),
             decoration: BoxDecoration(
               color: primaryColor,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
+              boxShadow: [
+                BoxShadow(color: primaryColor.withAlpha(40), blurRadius: 10, offset: const Offset(0, 5))
+              ],
             ),
             child: Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(15),
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child: Image.asset(AppAssets.logo, height: 60),
+                  child: Image.asset(AppAssets.logo, height: 70),
                 ),
-                const SizedBox(height: 15),
-                _buildAppBarLogo(secondaryColor),
-                const SizedBox(height: 5),
+                const SizedBox(height: 20),
                 const Text(
-                  "دليلك للنجاح والتفوق",
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                  "سـنـد",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                Text(
+                  "رفيقك في طريق النجاح",
+                  style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 13, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 25),
+          // زر الترقية الذهبي
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFFA500).withAlpha(60),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  )
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showSubscriptionSheet();
+                  },
+                  borderRadius: BorderRadius.circular(18),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    child: Row(
+                      children: [
+                        Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 28),
+                        SizedBox(width: 15),
+                        Text(
+                          "سند بلس (الاشتراكات)",
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        Spacer(),
+                        Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 14),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           _buildDrawerItem(
             icon: Icons.share_rounded,
             title: "مشاركة التطبيق",
             color: primaryColor,
-            onTap: () {
-              // منطق المشاركة
-            },
+            onTap: () {},
           ),
           _buildDrawerItem(
             icon: Icons.star_rate_rounded,
             title: "تقييم التطبيق",
             color: primaryColor,
-            onTap: () {
-              // منطق التقييم
-            },
+            onTap: () {},
           ),
           _buildDrawerItem(
             icon: Icons.report_problem_rounded,
             title: "إبلاغ عن مشكلة",
             color: primaryColor,
-            onTap: () {
-              // منطق الإبلاغ
-            },
+            onTap: () {},
           ),
-          const Divider(indent: 20, endIndent: 20),
+          const Divider(indent: 25, endIndent: 25, height: 40),
           _buildDrawerItem(
             icon: Icons.info_rounded,
             title: "عن التطبيق",
             color: primaryColor,
-            onTap: () {
-              // معلومات عن التطبيق
-            },
+            onTap: () {},
           ),
           const Spacer(),
           Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(25.0),
             child: Text(
               "الإصدار 1.0.0",
-              style: TextStyle(color: Colors.grey[400], fontSize: 12),
+              style: TextStyle(color: Colors.grey[400], fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -693,14 +904,8 @@ class _HomePageScreenState extends State<HomePageScreen> {
     return Text.rich(
       TextSpan(
         children: [
-          const TextSpan(
-              text: "A ",
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold)),
           TextSpan(
-              text: "Plus",
+              text: "سـنـد",
               style: TextStyle(
                   color: secondaryColor,
                   fontSize: 32,
@@ -1022,6 +1227,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
   }
 
   Widget _buildAiChatView(Color primaryColor) {
+    // إظهار واجهة الاشتراك فقط بعد استهلاك الـ 3 رسائل بالكامل (أي عند محاولة الرابعة)
+    if (!isAiSubscribed && _aiMessagesCount > 3) {
+      return _buildAiPaywall(primaryColor);
+    }
     return Column(
       children: [
         Expanded(
