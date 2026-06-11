@@ -1,5 +1,5 @@
-name: a_plus
-description: "Educational App"
+name: sanad
+description: "تطبيق سند التعليمي"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -15,6 +15,7 @@ dependencies:
   intl: ^0.20.2
   shared_preferences: ^2.5.5
   image_picker: ^1.2.2
+  rename: ^3.1.0
 
 dev_dependencies:
   flutter_test:
@@ -43,7 +44,6 @@ flutter:
     - assets/jsons/subjects/islamic/
     - assets/jsons/subjects/arabic/rules/
     - assets/jsons/subjects/arabic/literature/
-    - assets/jsons/subjects/math/
     - assets/jsons/subjects/english/
 
   fonts:

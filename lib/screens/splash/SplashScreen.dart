@@ -15,8 +15,6 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // إخفاء شريط الإشعارات
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     _checkLoginStatus();
   }
@@ -55,6 +53,16 @@ class _SplashScreenState extends State<SplashScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: primaryColor,
+          elevation: 0,
+          toolbarHeight: 0,
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: primaryColor,
+            statusBarIconBrightness: Brightness.light,
+            statusBarBrightness: Brightness.dark,
+          ),
+        ),
         body: Stack(
           children: [
             _buildBackground(primaryColor, secondaryColor),
@@ -66,55 +74,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Widget _buildBackground(Color primaryColor, Color secondaryColor) {
-    return Stack(
-      children: [
-        Positioned(
-          top: -50,
-          left: -50,
-          child: Container(
-            width: 200,
-            height: 200,
-            decoration: BoxDecoration(
-              color: primaryColor,
-              borderRadius: const BorderRadius.only(
-                bottomRight: Radius.circular(200),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: -50,
-          right: -50,
-          child: Container(
-            width: 200,
-            height: 200,
-            decoration: BoxDecoration(
-              color: primaryColor,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(200),
-              ),
-            ),
-          ),
-        ),
-
-        // 3 Dots
-        Positioned(
-          top: 80,
-          right: 80,
-          child: _buildDot(secondaryColor, 15),
-        ),
-        Positioned(
-          bottom: 200,
-          right: 40,
-          child: _buildDot(secondaryColor, 12),
-        ),
-        Positioned(
-          bottom: 350,
-          left: 30,
-          child: _buildDot(primaryColor.withAlpha(230), 20),
-        ),
-      ],
-    );
+    return const SizedBox.shrink(); // الغاء الخلفية والاشكال والنقاط
   }
 
   Widget _buildContent(Color primaryColor, Color secondaryColor) {

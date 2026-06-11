@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'A Plus',
+      title: 'سند',
       theme: AppTheme.lightTheme,
       builder: (context, child) {
         return Directionality(

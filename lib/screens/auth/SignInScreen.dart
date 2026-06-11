@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_assets.dart';
 
@@ -50,10 +51,19 @@ class _SignInScreenState extends State<SignInScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 25.0),
-            child: Form(
+        appBar: AppBar(
+          backgroundColor: primaryColor,
+          elevation: 0,
+          toolbarHeight: 0,
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: primaryColor,
+            statusBarIconBrightness: Brightness.light,
+            statusBarBrightness: Brightness.dark,
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 25.0),
+          child: Form(
               key: _formKey,
               child: Column(
                 children: [
@@ -73,7 +83,7 @@ class _SignInScreenState extends State<SignInScreen> {
           ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildHeader(Color primaryColor, Color secondaryColor) {
@@ -131,7 +141,6 @@ class _SignInScreenState extends State<SignInScreen> {
           hint: "البريد الإلكتروني",
           icon: Icons.email_outlined,
           keyboardType: TextInputType.emailAddress,
-          height: 65, // زيادة الارتفاع لاستيعاب رسالة الخطأ
           validator: (value) {
             if (value == null || value.isEmpty) {
               return "يرجى إدخال البريد الإلكتروني";
@@ -142,13 +151,12 @@ class _SignInScreenState extends State<SignInScreen> {
             return null;
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 15),
         _buildTextField(
           controller: _passwordController,
           hint: "كلمة المرور",
           icon: Icons.lock_outline,
           isPassword: true,
-          height: 65,
           obscureText: _obscurePassword,
           onToggleVisibility: () => setState(() => _obscurePassword = !_obscurePassword),
           validator: (value) {
@@ -171,46 +179,42 @@ class _SignInScreenState extends State<SignInScreen> {
     required IconData icon,
     bool isPassword = false,
     bool obscureText = false,
-    double height = 45,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
     VoidCallback? onToggleVisibility,
   }) {
-    return SizedBox(
-      height: height,
-      child: TextFormField(
-        controller: controller,
-        obscureText: obscureText,
-        keyboardType: keyboardType,
-        validator: validator,
-        style: const TextStyle(fontSize: 14),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
-          prefixIcon: Icon(icon, color: Colors.grey[400], size: 18),
-          suffixIcon: isPassword
-              ? IconButton(
-                  icon: Icon(
-                    obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    color: Colors.grey[400],
-                    size: 18,
-                  ),
-                  onPressed: onToggleVisibility,
-                )
-              : null,
-          filled: true,
-          fillColor: const Color(0xFFF8F9FA),
-          contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFFF1F3F5)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFFF1F3F5)),
-          ),
-          errorStyle: const TextStyle(fontSize: 11, height: 0.8),
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      validator: validator,
+      style: const TextStyle(fontSize: 14),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+        prefixIcon: Icon(icon, color: Colors.grey[400], size: 18),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  color: Colors.grey[400],
+                  size: 18,
+                ),
+                onPressed: onToggleVisibility,
+              )
+            : null,
+        filled: true,
+        fillColor: const Color(0xFFF8F9FA),
+        contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFF1F3F5)),
         ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFF1F3F5)),
+        ),
+        errorStyle: const TextStyle(fontSize: 11),
       ),
     );
   }
@@ -252,7 +256,6 @@ class _SignInScreenState extends State<SignInScreen> {
                 hint: "البريد الإلكتروني",
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
-                height: 52,
               ),
               const SizedBox(height: 24),
               SizedBox(

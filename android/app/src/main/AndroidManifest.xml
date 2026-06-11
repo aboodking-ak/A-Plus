@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.CAMERA"/>
 
     <application
-        android:label="A Plus"
+        android:label="سند"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

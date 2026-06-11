@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/constants/app_assets.dart';
 
 class StagesScreen extends StatefulWidget {
@@ -12,18 +13,18 @@ class _StagesScreenState extends State<StagesScreen> {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Color(0xFF1A2238), // نفس لون AppColors.primary
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
+    ));
   }
 
   String? selectedStage;
 
   final List<Map<String, String>> stages = [
-    {'label': 'سادس علمي', 'icon': AppAssets.sixthScientific},
-    {'label': 'سادس أدبي', 'icon': AppAssets.sixthLiterary},
-    {'label': 'خامس علمي', 'icon': AppAssets.fifthScientific},
-    {'label': 'خامس أدبي', 'icon': AppAssets.fifthLiterary},
-    {'label': 'رابع علمي', 'icon': AppAssets.fourthScientific},
-    {'label': 'رابع أدبي', 'icon': AppAssets.fourthLiterary},
-    {'label': 'ثالث متوسط', 'icon': AppAssets.thirdIntermediate},
+    {'label': 'سادس علمي', 'icon': AppAssets.sixthScientific, 'desc': 'تخصص العلوم الطبيعية والرياضيات'},
+    {'label': 'سادس أدبي', 'icon': AppAssets.sixthLiterary, 'desc': 'تخصص العلوم الإنسانية واللغات'},
   ];
 
   @override
@@ -36,92 +37,44 @@ class _StagesScreenState extends State<StagesScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: Stack(
+        appBar: AppBar(
+          backgroundColor: primaryColor,
+          elevation: 0,
+          toolbarHeight: 0,
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: primaryColor,
+            statusBarIconBrightness: Brightness.light,
+            statusBarBrightness: Brightness.dark,
+          ),
+        ),
+        body: Column(
           children: [
-            _buildBackgroundShapes(primaryColor),
-            SafeArea(
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  _buildLogo(primaryColor, secondaryColor),
-                  const SizedBox(height: 20),
-                  _buildHeader(primaryColor),
-                  const SizedBox(height: 30),
-                  _buildStagesGrid(),
-                  _buildContinueButton(primaryColor),
-                ],
-              ),
-            ),
+            const Spacer(flex: 1),
+            _buildLogo(primaryColor, secondaryColor),
+            const SizedBox(height: 20),
+            _buildHeader(primaryColor),
+            const Spacer(flex: 1),
+            _buildStagesGrid(),
+            const Spacer(flex: 2),
+            _buildContinueButton(primaryColor),
+            const SizedBox(height: 10),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBackgroundShapes(Color color) {
-    return Stack(
-      children: [
-        Positioned(
-          top: -60,
-          left: -60,
-          child: Container(
-            width: 180,
-            height: 180,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: const BorderRadius.only(
-                bottomRight: Radius.circular(180),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: -60,
-          right: -60,
-          child: Container(
-            width: 180,
-            height: 180,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(180),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildLogo(Color primaryColor, Color secondaryColor) {
     return Center(
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey[100]!, width: 1),
-            ),
-          ),
-          SizedBox(
-            width: 115,
-            height: 115,
-            child: CircularProgressIndicator(
-              value: 0.35,
-              strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(secondaryColor),
-            ),
-          ),
-          Image.asset(
-            AppAssets.logo,
-            width: 80,
-            errorBuilder: (context, error, stackTrace) =>
-                Icon(Icons.school, size: 60, color: primaryColor),
-          ),
-        ],
+      child: ClipOval(
+        child: Image.asset(
+          AppAssets.logo,
+          width: 120,
+          height: 120,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) =>
+              Icon(Icons.school, size: 80, color: primaryColor),
+        ),
       ),
     );
   }
@@ -146,96 +99,90 @@ class _StagesScreenState extends State<StagesScreen> {
   }
 
   Widget _buildStagesGrid() {
-    return Expanded(
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // عرض أول 6 مراحل في صفوف (كل صف فيه مرحلتين)
-          _buildRow(0, 1),
-          const SizedBox(height: 15),
-          _buildRow(2, 3),
-          const SizedBox(height: 15),
-          _buildRow(4, 5),
-          const SizedBox(height: 15),
-          
-          // عرض المرحلة الأخيرة (ثالث متوسط) بعرض كامل
-          _buildStageCard(stages[6], isFullWidth: true),
+          _buildStageCard(stages[0]),
+          const SizedBox(height: 20),
+          _buildStageCard(stages[1]),
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  // دالة مساعدة لبناء صف يحتوي على كارتين بجانب بعضهما
-  Widget _buildRow(int index1, int index2) {
-    return Row(
-      children: [
-        Expanded(child: _buildStageCard(stages[index1])),
-        const SizedBox(width: 15),
-        Expanded(child: _buildStageCard(stages[index2])),
-      ],
-    );
-  }
-
-  Widget _buildStageCard(Map<String, String> stage, {bool isFullWidth = false}) {
+  Widget _buildStageCard(Map<String, String> stage) {
     final isSelected = selectedStage == stage['label'];
-    final bool isAvailable = stage['label'] == 'سادس علمي';
     final primaryColor = Theme.of(context).colorScheme.primary;
     final secondaryColor = Theme.of(context).colorScheme.secondary;
 
     return GestureDetector(
-      onTap: isAvailable
-          ? () => setState(() => selectedStage = stage['label'])
-          : () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("هذه المرحلة ستتوفر قريباً"),
-                  duration: Duration(seconds: 1),
-                  behavior: SnackBarBehavior.floating,
-                  margin: EdgeInsets.fromLTRB(5, 0, 5, 5),
-                ),
-              );
-            },
-      child: Container(
-        height: 70,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+      onTap: () => setState(() => selectedStage = stage['label']),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
         decoration: BoxDecoration(
-          color: isAvailable ? Colors.white : Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? primaryColor.withOpacity(0.05) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isSelected
-                ? secondaryColor
-                : (isAvailable ? Colors.grey[200]! : Colors.grey[100]!),
-            width: isSelected ? 2 : 1,
+            color: isSelected ? secondaryColor : Colors.grey[200]!,
+            width: isSelected ? 2.5 : 1.5,
           ),
-          boxShadow: isAvailable
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(10),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                stage['label']!,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected
-                      ? primaryColor
-                      : (isAvailable ? Colors.grey[700] : Colors.grey[400]),
-                ),
-              ),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected 
+                  ? secondaryColor.withOpacity(0.15) 
+                  : Colors.black.withOpacity(0.03),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
-            Opacity(
-              opacity: isAvailable ? 1.0 : 0.4,
-              child: Image.asset(stage['icon']!, height: 35, width: 35),
+          ],
+        ),
+        child: Stack(
+          children: [
+            if (isSelected)
+              PositionedDirectional(
+                top: 0,
+                start: 0,
+                child: Icon(Icons.check_circle, color: secondaryColor, size: 28),
+              ),
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipOval(
+                    child: Image.asset(
+                      stage['icon']!,
+                      height: 100,
+                      width: 100,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Icon(Icons.school_outlined, size: 60, color: primaryColor),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  Text(
+                    stage['label']!,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? primaryColor : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    stage['desc']!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

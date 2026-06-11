@@ -203,7 +203,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
     
     // رسالة الترحيب
     _chatMessages.add({
-      'text': 'مرحباً بك في A Plus! أنا مساعدك الذكي، كيف يمكنني مساعدتك في دراستك اليوم؟',
+      'text': 'مرحباً بك في سند! أنا مساعدك الذكي، كيف يمكنني مساعدتك في دراستك اليوم؟',
       'isMe': false,
     });
   }
@@ -267,7 +267,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
 
   final List<Map<String, String>> _notifications = [
     {
-      'title': 'مرحباً بك في A Plus',
+      'title': 'مرحباً بك في سند',
       'body': 'نتمنى لك رحلة تعليمية ممتعة ومفيدة.',
       'time': 'منذ ساعة'
     },

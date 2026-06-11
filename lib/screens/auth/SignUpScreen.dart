@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_assets.dart';
 
@@ -125,10 +126,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   final String _termsText = """
-1. قبول الشروط: باستخدامك لتطبيق A Plus، فإنك توافق على الالتزام بهذه الشروط والأحكام بالكامل.
+1. قبول الشروط: باستخدامك لتطبيق سند، فإنك توافق على الالتزام بهذه الشروط والأحكام بالكامل.
 2. الاستخدام المسموح: التطبيق مخصص للأغراض التعليمية الشخصية فقط. يمنع نسخ أو توزيع المحتوى دون إذن خطي.
 3. الحسابات: أنت مسؤول عن الحفاظ على سرية معلومات حسابك ونشاطاته.
-4. حقوق الملكية: جميع المواد التعليمية والعلامات التجارية في التطبيق هي ملك حصري لـ A Plus.
+4. حقوق الملكية: جميع المواد التعليمية والعلامات التجارية في التطبيق هي ملك حصري لـ سند.
 5. التعديلات: نحتفظ بالحق في تعديل هذه الشروط في أي وقت، وسيتم إخطارك بالتغييرات الجوهرية.
 """;
 
@@ -214,13 +215,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 25.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
+        appBar: AppBar(
+          backgroundColor: primaryColor,
+          elevation: 0,
+          toolbarHeight: 0,
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: primaryColor,
+            statusBarIconBrightness: Brightness.light,
+            statusBarBrightness: Brightness.dark,
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 25.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
                 const SizedBox(height: 10),
                 _buildHeader(primaryColor, secondaryColor),
                 const SizedBox(height: 15),
@@ -237,7 +247,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildHeader(Color primaryColor, Color secondaryColor) {
