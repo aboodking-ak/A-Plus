@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class EssaysScreen extends StatefulWidget {
   const EssaysScreen({super.key});
@@ -8,16 +10,33 @@ class EssaysScreen extends StatefulWidget {
 }
 
 class _EssaysScreenState extends State<EssaysScreen> {
-  String? selectedEssay;
+  Map<String, dynamic>? essaysData;
+  Map<String, dynamic>? selectedEssayData;
+  int? selectedUnit; // لتعقب الوحدة المختارة
+  bool isInitialLoading = true;
   bool isPlaying = false;
-  double audioPosition = 0.5; // قيمة تجريبية للشريط
+  double audioPosition = 0.5;
+  bool isShortened = false; // Toggle for short version
 
-  final List<String> essays = [
-    "Unit 1: A cigarette commercial",
-    "Unit 2: Applying for a job",
-    "Unit 3: Benefits of studying English",
-    "Unit 5: A wonderful holiday",
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadEssays();
+  }
+
+  Future<void> _loadEssays() async {
+    try {
+      final String response = await rootBundle.loadString('assets/jsons/subjects/english/essays.json');
+      final Map<String, dynamic> data = json.decode(response);
+      setState(() {
+        essaysData = data;
+        isInitialLoading = false;
+      });
+    } catch (e) {
+      debugPrint("Error loading essays data: $e");
+      setState(() => isInitialLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +44,16 @@ class _EssaysScreenState extends State<EssaysScreen> {
     final primaryColor = theme.colorScheme.primary;
     const backgroundColor = Color(0xFFF1F5F9);
 
+    if (isInitialLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text("الإنشاءات الإنجليزية", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text("الإنشاءات الإنجليزية", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'Tajawal')),
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -39,28 +64,38 @@ class _EssaysScreenState extends State<EssaysScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          if (selectedEssayData != null)
+            IconButton(
+              icon: Icon(isShortened ? Icons.compress_rounded : Icons.expand_rounded),
+              tooltip: isShortened ? "عرض النص الكامل" : "اختصار النص",
+              onPressed: () => setState(() => isShortened = !isShortened),
+            ),
           IconButton(
             icon: const Icon(Icons.filter_list_rounded),
             onPressed: () => _showSelectionBottomSheet(context, primaryColor),
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          _buildEssayContent(primaryColor),
-          if (selectedEssay != null)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: _buildFloatingAudioPlayer(primaryColor),
+      body: essaysData == null
+          ? const Center(child: Text("تعذر تحميل البيانات"))
+          : Stack(
+              children: [
+                _buildEssayContent(primaryColor),
+                if (selectedEssayData != null)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: _buildFloatingAudioPlayer(primaryColor),
+                  ),
+              ],
             ),
-        ],
-      ),
     );
   }
 
   void _showSelectionBottomSheet(BuildContext context, Color primaryColor) {
+    final List<dynamic> unitsData = essaysData?['units'] ?? [];
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -68,8 +103,18 @@ class _EssaysScreenState extends State<EssaysScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
       builder: (context) {
+        // متغيرات مؤقتة للاختيار داخل الـ BottomSheet فقط
+        int? tempUnit = selectedUnit;
+        Map<String, dynamic>? tempEssay = selectedEssayData;
+
         return StatefulBuilder(
           builder: (context, setModalState) {
+            final selectedUnitData = unitsData.firstWhere(
+              (u) => u['number'] == tempUnit,
+              orElse: () => null,
+            );
+            final filteredEssays = selectedUnitData?['essays'] as List? ?? [];
+
             return Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
@@ -77,37 +122,57 @@ class _EssaysScreenState extends State<EssaysScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "اختيار الإنشاء",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    "اختيار الوحدة والإنشاء",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Tajawal'),
                   ),
                   const SizedBox(height: 20),
-                  Directionality(
-                    textDirection: TextDirection.ltr,
-                    child: _buildModalDropdown(
-                      "Essay",
-                      Icons.edit_note_rounded,
-                      essays,
-                      selectedEssay,
-                      (val) {
-                        setModalState(() => selectedEssay = val);
-                        setState(() => selectedEssay = val);
-                      },
-                    ),
+                  _buildModalDropdown(
+                    "اختر الوحدة (Unit)",
+                    Icons.grid_view_rounded,
+                    unitsData.map((u) => u['title'] as String).toList(),
+                    selectedUnitData?['title'],
+                    (val) {
+                      final unit = unitsData.firstWhere((u) => u['title'] == val);
+                      setModalState(() {
+                        tempUnit = unit['number'];
+                        tempEssay = null;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 15),
+                  _buildModalDropdown(
+                    "اختر الإنشاء (Essay)",
+                    Icons.edit_note_rounded,
+                    filteredEssays.map((e) => e['title'] as String).toList(),
+                    tempEssay?['title'],
+                    (val) {
+                      final essay = filteredEssays.firstWhere((e) => e['title'] == val);
+                      setModalState(() => tempEssay = essay);
+                    },
+                    isEnabled: tempUnit != null,
                   ),
                   const SizedBox(height: 30),
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: (selectedEssay != null)
-                          ? () => Navigator.pop(context)
+                      onPressed: (tempEssay != null)
+                          ? () {
+                              // تحديث الحالة الرئيسية فقط عند الضغط على زر التأكيد
+                              setState(() {
+                                selectedUnit = tempUnit;
+                                selectedEssayData = tempEssay;
+                                isShortened = false; // Reset shortening when new essay selected
+                              });
+                              Navigator.pop(context);
+                            }
                           : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text("تأكيد الاختيار", style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text("تأكيد الاختيار", style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Tajawal')),
                     ),
                   ),
                 ],
@@ -133,9 +198,9 @@ class _EssaysScreenState extends State<EssaysScreen> {
           value: value,
           hint: Row(
             children: [
-              Icon(icon, size: 20, color: Colors.grey[400]),
+              Icon(icon, size: 20, color: isEnabled ? Colors.grey[400] : Colors.grey[300]),
               const SizedBox(width: 12),
-              Text(hint, style: TextStyle(color: Colors.grey[400])),
+              Text(hint, style: TextStyle(color: isEnabled ? Colors.grey[400] : Colors.grey[300], fontFamily: 'Tajawal')),
             ],
           ),
           items: isEnabled
@@ -144,7 +209,7 @@ class _EssaysScreenState extends State<EssaysScreen> {
                       value: item,
                       child: Directionality(
                           textDirection: TextDirection.ltr,
-                          child: Text(item, textAlign: TextAlign.left))))
+                          child: Text(item, textAlign: TextAlign.left, style: const TextStyle(fontFamily: 'Tajawal')))))
                   .toList()
               : null,
           onChanged: isEnabled ? onChanged : null,
@@ -154,7 +219,7 @@ class _EssaysScreenState extends State<EssaysScreen> {
   }
 
   Widget _buildEssayContent(Color primaryColor) {
-    if (selectedEssay == null) {
+    if (selectedEssayData == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -173,7 +238,7 @@ class _EssaysScreenState extends State<EssaysScreen> {
             const SizedBox(height: 20),
             const Text(
               "يرجى اختيار الإنشاء للعرض والاستماع",
-              style: TextStyle(color: Colors.grey, fontSize: 15, fontWeight: FontWeight.w600),
+              style: TextStyle(color: Colors.grey, fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Tajawal'),
             ),
           ],
         ),
@@ -184,12 +249,50 @@ class _EssaysScreenState extends State<EssaysScreen> {
       padding: const EdgeInsets.only(bottom: 140),
       child: Column(
         children: [
+          _buildSectionHeader("منطوق السؤال (Question)", primaryColor),
+          _buildQuestionCard(primaryColor),
+
+          const SizedBox(height: 10),
           _buildSectionHeader("نص الإنشاء (English)", primaryColor),
           _buildEssayTextCard(primaryColor),
           
           const SizedBox(height: 10),
           _buildSectionHeader("الترجمة (Translation)", primaryColor),
           _buildTranslationCard(primaryColor),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuestionCard(Color primaryColor) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: primaryColor.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Text(
+              selectedEssayData!['question'] ?? "",
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B), height: 1.5),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: Divider(height: 1),
+          ),
+          Text(
+            selectedEssayData!['question_ar'] ?? "",
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF475569), height: 1.5, fontFamily: 'Tajawal'),
+          ),
         ],
       ),
     );
@@ -212,7 +315,7 @@ class _EssaysScreenState extends State<EssaysScreen> {
           const SizedBox(width: 10),
           Text(
             title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontFamily: 'Tajawal'),
           ),
         ],
       ),
@@ -220,8 +323,10 @@ class _EssaysScreenState extends State<EssaysScreen> {
   }
 
   Widget _buildEssayTextCard(Color primaryColor) {
-    const String essayText = "Cigarette advertising should be illegal. Firstly, it encourages young people to start smoking, which is very harmful to their health. Secondly, the advertisements often make smoking look attractive and successful, which is misleading. Moreover, the government spends a lot of money on healthcare for smoking-related illnesses, so it is better to prevent smoking by banning these ads. In conclusion, banning cigarette commercials is a necessary step to protect public health and the younger generation.";
-    final int wordCount = essayText.split(' ').length;
+    final String essayText = isShortened 
+        ? (selectedEssayData!['short_answer'] ?? selectedEssayData!['answer']) 
+        : selectedEssayData!['answer'];
+    final int wordCount = essayText.split(' ').where((w) => w.isNotEmpty).length;
 
     return Container(
       width: double.infinity,
@@ -235,10 +340,12 @@ class _EssaysScreenState extends State<EssaysScreen> {
       child: Column(
         children: [
           Directionality(
-            textDirection: TextDirection.ltr,
-            child: Text(selectedEssay!,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryColor)),
+            textDirection: TextDirection.ltr, // Title in English
+            child: Center(
+              child: Text(selectedEssayData!['title'],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryColor, fontFamily: 'Tajawal')),
+            ),
           ),
           const SizedBox(height: 12),
           Container(
@@ -250,16 +357,16 @@ class _EssaysScreenState extends State<EssaysScreen> {
             ),
             child: Text(
               "$wordCount Words",
-              style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 11),
+              style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 11, fontFamily: 'Tajawal'),
             ),
           ),
           const Divider(height: 40, thickness: 1),
-          const Directionality(
-            textDirection: TextDirection.ltr,
+          Directionality(
+            textDirection: TextDirection.ltr, // Content in English
             child: Text(
               essayText,
               textAlign: TextAlign.justify,
-              style: TextStyle(fontSize: 17, height: 1.8, fontWeight: FontWeight.w500, color: Color(0xFF334155)),
+              style: const TextStyle(fontSize: 17, height: 1.8, fontWeight: FontWeight.w500, color: Color(0xFF334155), fontFamily: 'Tajawal'),
             ),
           ),
         ],
@@ -268,16 +375,20 @@ class _EssaysScreenState extends State<EssaysScreen> {
   }
 
   Widget _buildTranslationCard(Color primaryColor) {
+    final String translationText = isShortened 
+        ? (selectedEssayData!['short_translation'] ?? selectedEssayData!['translation']) 
+        : selectedEssayData!['translation'];
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(25),
       decoration: const BoxDecoration(
         color: Colors.white,
       ),
-      child: const Text(
-        "يجب أن تكون إعلانات السجائر غير قانونية. أولاً، إنها تشجع الشباب على البدء بالتدخين، وهو أمر ضار جداً بصحتهم. ثانياً، غالباً ما تجعل الإعلانات التدخين يبدو جذاباً وناجحاً، وهو أمر مضلل. علاوة على ذلك، تنفق الحكومة الكثير من المال على الرعاية الصحية للأمراض المرتبطة بالتدخين، لذا فمن الأفضل منع التدخين عن طريق حظر هذه الإعلانات. في الختام، يعد حظر إعلانات السجائر خطوة ضرورية لحماية الصحة العامة وجيل الشباب.",
+      child: Text(
+        translationText,
         textAlign: TextAlign.justify,
-        style: TextStyle(fontSize: 17, height: 1.8, fontWeight: FontWeight.w500, color: Color(0xFF334155)),
+        style: const TextStyle(fontSize: 17, height: 1.8, fontWeight: FontWeight.w500, color: Color(0xFF334155), fontFamily: 'Tajawal'),
       ),
     );
   }
@@ -318,14 +429,14 @@ class _EssaysScreenState extends State<EssaysScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            selectedEssay!,
+                            selectedEssayData!['title'],
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B), fontFamily: 'Tajawal'),
                           ),
                         ),
                         const SizedBox(width: 10),
-                        const Text("02:15 / 00:00", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                        const Text("00:00 / 00:00", style: TextStyle(fontSize: 10, color: Colors.grey, fontFamily: 'Tajawal')),
                       ],
                     ),
                     SliderTheme(

@@ -36,6 +36,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_name', _nameController.text.trim());
       await prefs.setString('user_email', _emailController.text.trim());
+      // سنعتبره مسجل دخول بمجرد إنشاء الحساب في هذا النموذج التوضيحي
+      await prefs.setBool('is_logged_in', true);
     } catch (e) {
       // تم حذف debugPrint
     }

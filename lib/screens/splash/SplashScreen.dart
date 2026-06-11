@@ -1,6 +1,7 @@
 import 'dart:async' show Timer;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_assets.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -17,8 +18,23 @@ class _SplashScreenState extends State<SplashScreen> {
     // إخفاء شريط الإشعارات
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final bool isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+
     Timer(const Duration(seconds: 3), () {
-      Navigator.pushReplacementNamed(context, "/signup");
+      if (mounted) {
+        if (isLoggedIn) {
+          // إذا كان مسجل دخول، ننتقل للرئيسية
+          Navigator.pushReplacementNamed(context, "/home");
+        } else {
+          // إذا لم يكن مسجل دخول، ننتقل لإنشاء الحساب
+          Navigator.pushReplacementNamed(context, "/signup");
+        }
+      }
     });
   }
 

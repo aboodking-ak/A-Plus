@@ -689,22 +689,24 @@ class _HomePageScreenState extends State<HomePageScreen> {
         }
       }
 
-      // 2. البحث في الاختبارات والوزاريات
-      if ("اختبارات $subjectLabel".contains(query) || "الاختبارات".contains(query)) {
-        results.add({
-          'title': "اختبارات $subjectLabel",
-          'type': 'اختبارات',
-          'icon': Icons.assignment_turned_in_rounded,
-          'onTap': () => Navigator.pushNamed(context, '/exams', arguments: {'subjectName': subjectLabel}),
-        });
-      }
-      if ("وزاريات $subjectLabel".contains(query) || "الوزاريات".contains(query)) {
-        results.add({
-          'title': "وزاريات $subjectLabel",
-          'type': 'وزاريات',
-          'icon': Icons.account_balance_rounded,
-          'onTap': () => Navigator.pushNamed(context, '/ministerials', arguments: {'subjectName': subjectLabel}),
-        });
+      // 2. البحث في الاختبارات والوزاريات (فقط لمواد معينة)
+      if (subjectLabel == 'الإسلامية' || subjectLabel == 'العربية') {
+        if ("اختبارات $subjectLabel".contains(query) || "الاختبارات".contains(query)) {
+          results.add({
+            'title': "اختبارات $subjectLabel",
+            'type': 'اختبارات',
+            'icon': Icons.assignment_turned_in_rounded,
+            'onTap': () => Navigator.pushNamed(context, '/exams', arguments: {'subjectName': subjectLabel}),
+          });
+        }
+        if ("وزاريات $subjectLabel".contains(query) || "الوزاريات".contains(query)) {
+          results.add({
+            'title': "وزاريات $subjectLabel",
+            'type': 'وزاريات',
+            'icon': Icons.account_balance_rounded,
+            'onTap': () => Navigator.pushNamed(context, '/ministerials', arguments: {'subjectName': subjectLabel}),
+          });
+        }
       }
 
       // 3. الأقسام الخاصة
@@ -734,21 +736,23 @@ class _HomePageScreenState extends State<HomePageScreen> {
           'onTap': () => Navigator.pushNamed(context, '/poems'),
         });
       }
-      if (subjectLabel == 'الإنكليزي' && "الإنشاءات".contains(query)) {
-        results.add({
-          'title': "الإنشاءات - الإنكليزي",
-          'type': 'قسم',
-          'icon': Icons.edit_note_rounded,
-          'onTap': () => Navigator.pushNamed(context, '/essays'),
-        });
-      }
-      if (subjectLabel == 'الأحياء' && "رسومات الأحياء".contains(query)) {
-        results.add({
-          'title': "رسومات الأحياء",
-          'type': 'قسم',
-          'icon': Icons.image_search_rounded,
-          'onTap': () => Navigator.pushNamed(context, '/biology_diagrams'),
-        });
+      if (subjectLabel == 'الإنكليزي') {
+        if ("الإنشاءات".contains(query)) {
+          results.add({
+            'title': "الإنشاءات - الإنكليزي",
+            'type': 'قسم',
+            'icon': Icons.edit_note_rounded,
+            'onTap': () => Navigator.pushNamed(context, '/essays'),
+          });
+        }
+        if ("قطع الكتاب".contains(query)) {
+          results.add({
+            'title': "قطع الكتاب - الإنكليزي",
+            'type': 'قسم',
+            'icon': Icons.book_rounded,
+            'onTap': () => Navigator.pushNamed(context, '/book_passages'),
+          });
+        }
       }
     }
 
@@ -1571,38 +1575,40 @@ class _HomePageScreenState extends State<HomePageScreen> {
                   },
                 );
               }),
-              // زر الاختبارات الثابت
-              _buildBottomSheetItem(
-                "الاختبارات",
-                Icons.assignment_turned_in_rounded,
-                primaryColor,
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(
-                    context,
-                    '/exams',
-                    arguments: {
-                      'subjectName': subject['label'],
-                    },
-                  );
-                },
-              ),
-              // زر الوزاريات الثابت
-              _buildBottomSheetItem(
-                "الوزاريات",
-                Icons.account_balance_rounded,
-                primaryColor, // جعل لونه نفس لون الكتاب (primary)
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(
-                    context,
-                    '/ministerials',
-                    arguments: {
-                      'subjectName': subject['label'],
-                    },
-                  );
-                },
-              ),
+              // زر الاختبارات الثابت (فقط لمواد معينة)
+              if (subject['label'] == 'الإسلامية' || subject['label'] == 'العربية')
+                _buildBottomSheetItem(
+                  "الاختبارات",
+                  Icons.assignment_turned_in_rounded,
+                  primaryColor,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(
+                      context,
+                      '/exams',
+                      arguments: {
+                        'subjectName': subject['label'],
+                      },
+                    );
+                  },
+                ),
+              // زر الوزاريات الثابت (فقط لمواد معينة)
+              if (subject['label'] == 'الإسلامية' || subject['label'] == 'العربية')
+                _buildBottomSheetItem(
+                  "الوزاريات",
+                  Icons.account_balance_rounded,
+                  primaryColor, // جعل لونه نفس لون الكتاب (primary)
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(
+                      context,
+                      '/ministerials',
+                      arguments: {
+                        'subjectName': subject['label'],
+                      },
+                    );
+                  },
+                ),
               // قسم أحكام التلاوة (فقط لمادة الإسلامية)
               if (subject['label'] == 'الإسلامية')
                 _buildBottomSheetItem(
@@ -1625,6 +1631,17 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     Navigator.pushNamed(context, '/surahs');
                   },
               ),
+              // قسم الأحاديث النبوية الشريفة (فقط لمادة الإسلامية)
+              if (subject['label'] == 'الإسلامية')
+                _buildBottomSheetItem(
+                  "الأحاديث النبوية الشريفة",
+                  Icons.menu_book_rounded,
+                  primaryColor,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/hadiths');
+                  },
+                ),
               // قسم قصائد الأدب (فقط لمادة العربية)
               if (subject['label'] == 'العربية')
                 _buildBottomSheetItem(
@@ -1647,15 +1664,15 @@ class _HomePageScreenState extends State<HomePageScreen> {
                     Navigator.pushNamed(context, '/essays');
                   },
                 ),
-              // قسم رسومات الأحياء (فقط لمادة الأحياء)
-              if (subject['label'] == 'الأحياء')
+              // قسم قطع الكتاب (فقط لمادة الإنكليزي)
+              if (subject['label'] == 'الإنكليزي')
                 _buildBottomSheetItem(
-                  "رسومات الأحياء",
-                  Icons.image_search_rounded,
+                  "قطع الكتاب",
+                  Icons.book_rounded,
                   primaryColor,
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.pushNamed(context, '/biology_diagrams');
+                    Navigator.pushNamed(context, '/book_passages');
                   },
                 ),
               const SizedBox(height: 20),
@@ -1798,16 +1815,18 @@ class _HomePageScreenState extends State<HomePageScreen> {
     if (subject['pdfs'] != null) {
       sectionCount += (subject['pdfs'] as List).length;
     }
-    sectionCount += 2; // الاختبارات + الوزاريات
+    if (subject['label'] == 'الإسلامية' || subject['label'] == 'العربية') {
+      sectionCount += 2; // الاختبارات + الوزاريات
+    }
     
     if (subject['label'] == 'الإسلامية') {
-      sectionCount += 2;
+      sectionCount += 3;
     } else if (subject['label'] == 'العربية') {
       sectionCount += 1;
     } else if (subject['label'] == 'الإنكليزي') {
-      sectionCount += 1;
+      sectionCount += 2; // الإنشاءات + قطع الكتاب
     } else if (subject['label'] == 'الأحياء') {
-      sectionCount += 1;
+      // لا توجد أقسام إضافية حالياً
     }
 
     return GestureDetector(

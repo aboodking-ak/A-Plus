@@ -275,8 +275,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamedAndRemoveUntil(context, '/signin', (route) => false);
+                      onPressed: () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setBool('is_logged_in', false);
+                        if (context.mounted) {
+                          Navigator.pushNamedAndRemoveUntil(context, '/signin', (route) => false);
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.redAccent,
@@ -338,8 +342,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamedAndRemoveUntil(context, '/signup', (route) => false);
+                      onPressed: () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.clear(); // حذف كافة البيانات (الاسم، الإيميل، الصورة، حالة الدخول)
+                        if (context.mounted) {
+                          Navigator.pushNamedAndRemoveUntil(context, '/signup', (route) => false);
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,

@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class PoemScreen extends StatefulWidget {
   const PoemScreen({super.key});
@@ -8,17 +10,31 @@ class PoemScreen extends StatefulWidget {
 }
 
 class _PoemScreenState extends State<PoemScreen> {
-  String? selectedPoem;
+  List<dynamic> allPoems = [];
+  Map<String, dynamic>? selectedPoemData;
+  bool isLoading = true;
   bool isPlaying = false;
   double audioPosition = 0.0;
 
-  final List<String> poems = [
-    "قصيدة محمود سامي البارودي",
-    "قصيدة الحبوبي (يا غزال الكرخ)",
-    "قصيدة محمد سعيد الحبوبي",
-    "قصيدة الجواهري (آمنت بالحسين)",
-    "قصيدة إيليا أبو ماضي",
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadPoemsData();
+  }
+
+  Future<void> _loadPoemsData() async {
+    try {
+      final String response = await rootBundle.loadString('assets/jsons/subjects/arabic/literature/poems.json');
+      final data = json.decode(response);
+      setState(() {
+        allPoems = data;
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("Error loading poems: $e");
+      setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,27 +55,31 @@ class _PoemScreenState extends State<PoemScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.filter_list_rounded),
-              onPressed: () => _showSelectionBottomSheet(context, primaryColor),
+              onPressed: isLoading ? null : () => _showSelectionBottomSheet(context, primaryColor),
             ),
           ],
         ),
-        body: Stack(
-          children: [
-            _buildPoemContent(primaryColor),
-            if (selectedPoem != null)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: _buildFloatingAudioPlayer(primaryColor),
+        body: isLoading 
+            ? const Center(child: CircularProgressIndicator())
+            : Stack(
+                children: [
+                  _buildPoemContent(primaryColor),
+                  if (selectedPoemData != null)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: _buildFloatingAudioPlayer(primaryColor),
+                    ),
+                ],
               ),
-          ],
-        ),
       ),
     );
   }
 
   void _showSelectionBottomSheet(BuildContext context, Color primaryColor) {
+    Map<String, dynamic>? localSelectedPoem = selectedPoemData;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -83,11 +103,11 @@ class _PoemScreenState extends State<PoemScreen> {
                   _buildModalDropdown(
                     "القصيدة",
                     Icons.auto_stories_rounded,
-                    poems,
-                    selectedPoem,
+                    allPoems.map((p) => p['poem_name'].toString()).toList(),
+                    localSelectedPoem?['poem_name'],
                     (val) {
-                      setModalState(() => selectedPoem = val);
-                      setState(() => selectedPoem = val);
+                      final poem = allPoems.firstWhere((p) => p['poem_name'] == val);
+                      setModalState(() => localSelectedPoem = poem);
                     },
                   ),
                   const SizedBox(height: 30),
@@ -95,8 +115,11 @@ class _PoemScreenState extends State<PoemScreen> {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: (selectedPoem != null)
-                          ? () => Navigator.pop(context)
+                      onPressed: (localSelectedPoem != null)
+                          ? () {
+                              setState(() => selectedPoemData = localSelectedPoem);
+                              Navigator.pop(context);
+                            }
                           : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
@@ -142,7 +165,7 @@ class _PoemScreenState extends State<PoemScreen> {
   }
 
   Widget _buildPoemContent(Color primaryColor) {
-    if (selectedPoem == null) {
+    if (selectedPoemData == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -164,10 +187,14 @@ class _PoemScreenState extends State<PoemScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildPoemHeader(primaryColor),
+          const SizedBox(height: 25),
+          _buildPoetInfoCard(primaryColor),
           const SizedBox(height: 30),
           _buildVersesSection(primaryColor),
-          const SizedBox(height: 40),
-          _buildMeaningsSection(primaryColor),
+          if (selectedPoemData!['meanings'] != null && (selectedPoemData!['meanings'] as List).isNotEmpty) ...[
+            const SizedBox(height: 40),
+            _buildMeaningsSection(primaryColor),
+          ],
         ],
       ),
     );
@@ -187,7 +214,7 @@ class _PoemScreenState extends State<PoemScreen> {
       child: Column(
         children: [
           Text(
-            selectedPoem!,
+            selectedPoemData!['poem_name'],
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
             textAlign: TextAlign.center,
           ),
@@ -198,9 +225,9 @@ class _PoemScreenState extends State<PoemScreen> {
               color: Colors.white.withAlpha(51),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Text(
-              "للشاعر: محمود سامي البارودي",
-              style: TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.w500),
+            child: Text(
+              "للشاعر: ${selectedPoemData!['poet_name']}",
+              style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -208,19 +235,55 @@ class _PoemScreenState extends State<PoemScreen> {
     );
   }
 
+  Widget _buildPoetInfoCard(Color primaryColor) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey[100]!),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withAlpha(5), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(Icons.person_pin_rounded, color: primaryColor, size: 20),
+              const SizedBox(width: 10),
+              const Text("عن الشاعر", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          const SizedBox(height: 15),
+          _buildInfoRow(Icons.cake_rounded, "الولادة", "${selectedPoemData!['birth_date']} - ${selectedPoemData!['birth_place']}"),
+          const Divider(height: 20),
+          _buildInfoRow(Icons.event_busy_rounded, "الوفاة", "${selectedPoemData!['death_date'] ?? 'غير محدد'} - ${selectedPoemData!['death_place'] ?? 'غير محدد'}"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey),
+        const SizedBox(width: 8),
+        Text("$label: ", style: const TextStyle(color: Colors.grey, fontSize: 13)),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF334155))),
+      ],
+    );
+  }
+
   Widget _buildVersesSection(Color primaryColor) {
-    final List<Map<String, String>> verses = [
-      {'sadr': 'أبيتُ في غربةٍ لا النفسُ راضيةٌ', 'ajuz': 'بها، ولا ملتقى من شيعتي كثبُ'},
-      {'sadr': 'فلا رفيـقٌ تسرُّ النفسُ طلعتـهُ', 'ajuz': 'ولا صديقٌ يرى ما بي فيكتئبُ'},
-      {'sadr': 'أقمتُ بالنيـلِ لا عن طوعِ معرفـةٍ', 'ajuz': 'بها، ولكنْ هو المقدارُ والغلبُ'},
-    ];
+    final List verses = selectedPoemData!['verses'] ?? [];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle("أبيات القصيدة", primaryColor),
         const SizedBox(height: 20),
-        ...verses.map((v) => _buildVerseItem(v['sadr']!, v['ajuz']!, primaryColor)),
+        ...verses.map((v) => _buildVerseItem(v['sadr'] ?? "", v['ajuz'] ?? "", primaryColor)),
       ],
     );
   }
@@ -253,6 +316,7 @@ class _PoemScreenState extends State<PoemScreen> {
   }
 
   Widget _buildMeaningsSection(Color primaryColor) {
+    final List meanings = selectedPoemData!['meanings'] ?? [];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -265,11 +329,10 @@ class _PoemScreenState extends State<PoemScreen> {
             border: Border.all(color: Colors.grey[200]!),
           ),
           child: Column(
-            children: [
-              _buildMeaningRow("شيعتي", "أتباعي وأنصاري", true),
-              _buildMeaningRow("كثب", "قرب", false),
-              _buildMeaningRow("المقدار", "القضاء والقدر", true),
-            ],
+            children: List.generate(meanings.length, (index) {
+              final m = meanings[index];
+              return _buildMeaningRow(m['word'] ?? "", m['meaning'] ?? "", index % 2 == 0);
+            }),
           ),
         ),
       ],
@@ -281,6 +344,7 @@ class _PoemScreenState extends State<PoemScreen> {
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
       decoration: BoxDecoration(
         color: isGray ? Colors.grey[50] : Colors.white,
+        borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
         children: [
@@ -339,7 +403,7 @@ class _PoemScreenState extends State<PoemScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        selectedPoem!,
+                        selectedPoemData!['poem_name'],
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
                       ),
                       const Text("03:20 / 00:00", style: TextStyle(fontSize: 10, color: Colors.grey)),

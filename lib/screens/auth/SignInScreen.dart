@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_assets.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -21,10 +22,21 @@ class _SignInScreenState extends State<SignInScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _saveLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_logged_in', true);
+    // في تطبيق حقيقي، سنقوم بحفظ البريد الإلكتروني والاسم القادم من السيرفر هنا
+    if (prefs.getString('user_email') == null) {
+      await prefs.setString('user_email', _emailController.text.trim());
+    }
+  }
+
+  void _submit() async {
     if (_formKey.currentState!.validate()) {
-      // إذا كانت البيانات صحيحة، انتقل للمرحلة التالية
-      Navigator.pushReplacementNamed(context, '/stages');
+      await _saveLoginStatus();
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/stages');
+      }
     }
   }
 

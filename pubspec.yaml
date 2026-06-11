@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.11.5
+  sdk: ^3.12.0
 
 dependencies:
   flutter:
@@ -12,7 +12,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   pdfrx: ^2.4.1
   google_generative_ai: ^0.4.0
-  intl: ^0.19.0
+  intl: ^0.20.2
   shared_preferences: ^2.5.5
   image_picker: ^1.2.2
 
@@ -40,6 +40,11 @@ flutter:
     - assets/icons/subjects/
     - assets/icons/logo/
     - assets/pdfs/subjects/
+    - assets/jsons/subjects/islamic/
+    - assets/jsons/subjects/arabic/rules/
+    - assets/jsons/subjects/arabic/literature/
+    - assets/jsons/subjects/math/
+    - assets/jsons/subjects/english/
 
   fonts:
     - family: Tajawal

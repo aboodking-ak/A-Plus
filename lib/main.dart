@@ -9,9 +9,11 @@ import 'screens/pdf/pdf_viewer_screen.dart';
 import 'screens/exams/ExamsScreen.dart';
 import 'screens/ministerials/MinisterialsScreen.dart';
 import 'screens/islamic/SurahScreen.dart';
+import 'screens/islamic/hadiths_screen.dart';
 import 'screens/islamic/tajweed_rules_screen.dart';
 import 'screens/arabic/poem_screen.dart';
 import 'screens/english/EssaysScreen.dart';
+import 'screens/english/BookPassagesScreen.dart';
 import 'screens/biology/BiologyDiagramsScreen.dart';
 import 'screens/tools/CountdownScreen.dart';
 import 'screens/tools/NotesScreen.dart';
@@ -57,9 +59,11 @@ class MyApp extends StatelessWidget {
           return MinisterialsScreen(subjectName: args['subjectName']);
         },
         '/surahs': (context) => const SurahScreen(),
+        '/hadiths': (context) => const HadithsScreen(),
         '/tajweed_rules': (context) => const TajweedRulesScreen(),
         '/poems': (context) => const PoemScreen(),
         '/essays': (context) => const EssaysScreen(),
+        '/book_passages': (context) => const BookPassagesScreen(),
         '/biology_diagrams': (context) => const BiologyDiagramsScreen(),
         '/countdown': (context) => const CountdownScreen(),
         '/notes': (context) => const NotesScreen(),
