@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_assets.dart';
 
 class StagesScreen extends StatefulWidget {
@@ -18,6 +19,17 @@ class _StagesScreenState extends State<StagesScreen> {
       statusBarIconBrightness: Brightness.light,
       statusBarBrightness: Brightness.dark,
     ));
+    _loadSavedStage();
+  }
+
+  Future<void> _loadSavedStage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedStage = prefs.getString('user_stage');
+    if (savedStage != null) {
+      setState(() {
+        selectedStage = savedStage;
+      });
+    }
   }
 
   String? selectedStage;
@@ -199,9 +211,13 @@ class _StagesScreenState extends State<StagesScreen> {
         child: ElevatedButton(
           onPressed: selectedStage == null
               ? null
-              : () {
-                  Navigator.pushReplacementNamed(context, '/home',
-                      arguments: selectedStage);
+              : () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('user_stage', selectedStage!);
+                  if (mounted) {
+                    Navigator.pushReplacementNamed(context, '/home',
+                        arguments: selectedStage);
+                  }
                 },
           child: const Text(
             "متابعة",

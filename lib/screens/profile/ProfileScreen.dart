@@ -460,7 +460,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           _buildProfileData("المرحلة الدراسية والفرع", selectedStage, primaryColor),
                           TextButton.icon(
-                            onPressed: () => Navigator.pushNamed(context, '/stages'),
+                            onPressed: () => Navigator.pushNamed(context, '/stages').then((_) => _loadUserData()),
                             icon: Icon(Icons.edit_note_rounded, color: secondaryColor, size: 20),
                             label: Text("تبديل",
                                 style: TextStyle(color: secondaryColor, fontWeight: FontWeight.bold)),

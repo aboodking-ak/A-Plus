@@ -36,6 +36,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
   String userName = "الطالب";
   String userEmail = "user@email.com";
   String? _profileImagePath;
+  String? selectedStage;
 
   String _getInitials(String name) {
     if (name.isEmpty) return "S";
@@ -67,6 +68,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
     final savedName = prefs.getString('user_name');
     final savedEmail = prefs.getString('user_email');
     final savedImagePath = prefs.getString('profile_image_path');
+    final savedStage = prefs.getString('user_stage');
     
     if (mounted) {
       setState(() {
@@ -75,6 +77,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
         }
         userEmail = savedEmail ?? "user@email.com";
         _profileImagePath = savedImagePath;
+        if (savedStage != null) {
+          selectedStage = savedStage;
+        }
       });
     }
   }
@@ -278,87 +283,140 @@ class _HomePageScreenState extends State<HomePageScreen> {
     },
   ];
 
-  final List<Map<String, dynamic>> subjects = [
-    {
-      'label': 'الإسلامية',
-      'icon': AppAssets.islamic,
-      'pdfs': [
-        {'title': 'الكتاب', 'path': AppAssets.islamicPdf}
-      ],
-      'exams': [
-        {'title': 'اختبار شامل - الفصل الأول'},
-        {'title': 'اختبار شامل - الفصل الثاني'},
-      ]
-    },
-    {
-      'label': 'العربية',
-      'icon': AppAssets.arabic,
-      'pdfs': [
-        {'title': 'الكتاب - الجزء الأول', 'path': AppAssets.arabicP1Pdf},
-        {'title': 'الكتاب - الجزء الثاني', 'path': AppAssets.arabicP2Pdf},
-      ],
-      'exams': [
-        {'title': 'اختبار الأدب - الفصل الأول'},
-        {'title': 'اختبار القواعد - الفصل الأول'},
-      ]
-    },
-    {
-      'label': 'الإنكليزي',
-      'icon': AppAssets.english,
-      'pdfs': [
-        {'title': 'الكتاب - كتاب الطالب', 'path': AppAssets.englishStudentPdf},
-        {'title': 'الكتاب - كتاب النشاط', 'path': AppAssets.englishActivityPdf},
-      ],
-      'exams': [
-        {'title': 'اختبار مفردات - Unit 1'},
-        {'title': 'اختبار قواعد - Unit 1'},
-      ]
-    },
-    {
-      'label': 'الرياضيات',
-      'icon': AppAssets.math,
-      'pdfs': [
-        {'title': 'الكتاب', 'path': AppAssets.mathPdf}
-      ],
-      'exams': [
-        {'title': 'اختبار الأعداد المركبة'},
-        {'title': 'اختبار القطوع المخروطية'},
-      ]
-    },
-    {
-      'label': 'الأحياء',
-      'icon': AppAssets.biology,
-      'pdfs': [
-        {'title': 'الكتاب', 'path': AppAssets.biologyPdf}
-      ],
-      'exams': [
-        {'title': 'اختبار الخلية'},
-        {'title': 'اختبار الأنسجة'},
-      ]
-    },
-    {
-      'label': 'الكيمياء',
-      'icon': AppAssets.chemistry,
-      'pdfs': [
-        {'title': 'الكتاب', 'path': AppAssets.chemistryPdf}
-      ],
-      'exams': [
-        {'title': 'اختبار الثرموداينمك'},
-        {'title': 'اختبار الاتزان الكيميائي'},
-      ]
-    },
-    {
-      'label': 'الفيزياء',
-      'icon': AppAssets.physics,
-      'pdfs': [
-        {'title': 'الكتاب', 'path': AppAssets.physicsPdf}
-      ],
-      'exams': [
-        {'title': 'اختبار المتسعات'},
-        {'title': 'اختبار الحث الكهرومغناطيسي'},
-      ]
-    },
-  ];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments as String?;
+    if (args != null) {
+      selectedStage = args;
+    }
+  }
+
+  List<Map<String, dynamic>> get filteredSubjects {
+    bool isScientific = selectedStage?.contains('علمي') ?? true;
+
+    final List<Map<String, dynamic>> sharedSubjects = [
+      {
+        'label': 'الإسلامية',
+        'icon': Icons.menu_book_rounded,
+        'pdfs': [
+          {'title': 'الكتاب', 'path': AppAssets.islamicPdf}
+        ],
+        'exams': [
+          {'title': 'اختبار شامل - الفصل الأول'},
+          {'title': 'اختبار شامل - الفصل الثاني'},
+        ]
+      },
+      {
+        'label': 'العربية',
+        'icon': Icons.auto_stories_rounded,
+        'pdfs': [
+          {'title': 'الكتاب - الجزء الأول', 'path': AppAssets.arabicP1Pdf},
+          {'title': 'الكتاب - الجزء الثاني', 'path': AppAssets.arabicP2Pdf},
+        ],
+        'exams': [
+          {'title': 'اختبار الأدب - الفصل الأول'},
+          {'title': 'اختبار القواعد - الفصل الأول'},
+        ]
+      },
+      {
+        'label': 'الإنكليزي',
+        'icon': Icons.language_rounded,
+        'pdfs': [
+          {'title': 'الكتاب - كتاب الطالب', 'path': AppAssets.englishStudentPdf},
+          {'title': 'الكتاب - كتاب النشاط', 'path': AppAssets.englishActivityPdf},
+        ],
+        'exams': [
+          {'title': 'اختبار مفردات - Unit 1'},
+          {'title': 'اختبار قواعد - Unit 1'},
+        ]
+      },
+    ];
+
+    final List<Map<String, dynamic>> scientificSubjects = [
+      {
+        'label': 'الرياضيات',
+        'icon': Icons.functions_rounded,
+        'pdfs': [
+          {'title': 'الكتاب', 'path': AppAssets.mathScientificPdf}
+        ],
+        'exams': [
+          {'title': 'اختبار الأعداد المركبة'},
+          {'title': 'اختبار القطوع المخروطية'},
+        ]
+      },
+      {
+        'label': 'الأحياء',
+        'icon': Icons.biotech_rounded,
+        'pdfs': [
+          {'title': 'الكتاب', 'path': AppAssets.biologyPdf}
+        ],
+        'exams': [
+          {'title': 'اختبار الخلية'},
+          {'title': 'اختبار الأنسجة'},
+        ]
+      },
+      {
+        'label': 'الكيمياء',
+        'icon': Icons.science_rounded,
+        'pdfs': [
+          {'title': 'الكتاب', 'path': AppAssets.chemistryPdf}
+        ],
+        'exams': [
+          {'title': 'اختبار الثرموداينمك'},
+          {'title': 'اختبار الاتزان الكيميائي'},
+        ]
+      },
+      {
+        'label': 'الفيزياء',
+        'icon': Icons.bolt_rounded,
+        'pdfs': [
+          {'title': 'الكتاب', 'path': AppAssets.physicsPdf}
+        ],
+        'exams': [
+          {'title': 'اختبار المتسعات'},
+          {'title': 'اختبار الحث الكهرومغناطيسي'},
+        ]
+      },
+    ];
+
+    final List<Map<String, dynamic>> literarySubjects = [
+      {
+        'label': 'الرياضيات',
+        'icon': Icons.functions_rounded,
+        'pdfs': [
+          {'title': 'الكتاب', 'path': AppAssets.mathLiteraryPdf}
+        ],
+        'exams': []
+      },
+      {
+        'label': 'التاريخ',
+        'icon': Icons.history_edu_rounded,
+        'pdfs': [
+          {'title': 'الكتاب', 'path': AppAssets.historyPdf}
+        ],
+        'exams': []
+      },
+      {
+        'label': 'الجغرافية',
+        'icon': Icons.public_rounded,
+        'pdfs': [
+          {'title': 'الكتاب', 'path': AppAssets.geographyPdf}
+        ],
+        'exams': []
+      },
+      {
+        'label': 'الاقتصاد',
+        'icon': Icons.pie_chart_rounded,
+        'pdfs': [
+          {'title': 'الكتاب', 'path': AppAssets.economicsPdf}
+        ],
+        'exams': []
+      },
+    ];
+
+    return [...sharedSubjects, ...(isScientific ? scientificSubjects : literarySubjects)];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -460,17 +518,31 @@ class _HomePageScreenState extends State<HomePageScreen> {
       onTap: () {
         Navigator.pushNamed(context, '/profile').then((_) => _loadUserData());
       },
-      child: CircleAvatar(
-        radius: 22,
-        backgroundColor: Colors.white.withAlpha(40),
-        backgroundImage: _profileImagePath != null ? FileImage(File(_profileImagePath!)) : null,
-        child: _profileImagePath == null
-            ? Text(
-                _getInitials(userName),
-                style: const TextStyle(
-                    color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-              )
-            : null,
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 8,
+              spreadRadius: 1,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: CircleAvatar(
+          radius: 22,
+          backgroundColor: Colors.white.withAlpha(40),
+          backgroundImage: _profileImagePath != null ? FileImage(File(_profileImagePath!)) : null,
+          child: _profileImagePath == null
+              ? Text(
+                  _getInitials(userName),
+                  style: const TextStyle(
+                      color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                )
+              : null,
+        ),
       ),
     );
   }
@@ -605,6 +677,14 @@ class _HomePageScreenState extends State<HomePageScreen> {
             ],
           ),
         ),
+        const SizedBox(height: 2),
+        Text(
+          selectedStage ?? "لم يتم تحديد المرحلة",
+          style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 11,
+              fontWeight: FontWeight.w500),
+        ),
       ],
     );
   }
@@ -638,7 +718,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
             children: [
               _buildSearchBar(),
               if (_searchQuery.trim().isEmpty) ...[
-                _buildSectionHeader("المواد الدراسية", "${subjects.length} مواد"),
+                _buildSectionHeader("المواد الدراسية", "${filteredSubjects.length} مواد"),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: GridView.builder(
@@ -651,9 +731,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
                       crossAxisSpacing: 15,
                       mainAxisSpacing: 15,
                     ),
-                    itemCount: subjects.length,
+                    itemCount: filteredSubjects.length,
                     itemBuilder: (context, index) {
-                      return _buildSubjectCard(subjects[index]);
+                      return _buildSubjectCard(filteredSubjects[index]);
                     },
                   ),
                 ),
@@ -671,8 +751,9 @@ class _HomePageScreenState extends State<HomePageScreen> {
   Widget _buildSearchResults(Color primaryColor, Color secondaryColor) {
     final query = _searchQuery.trim().toLowerCase();
     final List<Map<String, dynamic>> results = [];
+    final currentSubjects = filteredSubjects;
 
-    for (var subject in subjects) {
+    for (var subject in currentSubjects) {
       final subjectLabel = subject['label'].toString();
       
       // 1. البحث في الكتب (PDFs)
@@ -819,7 +900,7 @@ class _HomePageScreenState extends State<HomePageScreen> {
             });
           },
           decoration: const InputDecoration(
-            hintText: "ابحث عن مادة، كتاب، أو اختبار...",
+            hintText: "ابحث داخل المواد...",
             prefixIcon: Icon(Icons.search_rounded, color: Colors.grey),
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(vertical: 15),
@@ -1544,14 +1625,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
                       color: primaryColor,
                     ),
                   ),
-                  Image.asset(
-                    subject['icon']!,
-                    height: 45,
-                    errorBuilder: (c, e, s) => Icon(
-                      Icons.book,
-                      color: secondaryColor,
-                      size: 35,
-                    ),
+                  Icon(
+                    subject['icon'] as IconData,
+                    size: 40,
+                    color: secondaryColor,
                   ),
                 ],
               ),
@@ -1878,14 +1955,10 @@ class _HomePageScreenState extends State<HomePageScreen> {
             ),
             Expanded(
               flex: 1,
-              child: Image.asset(
-                subject['icon']!,
-                height: 45,
-                errorBuilder: (c, e, s) => Icon(
-                  Icons.book,
-                  color: secondaryColor,
-                  size: 30,
-                ),
+              child: Icon(
+                subject['icon'] as IconData,
+                size: 35,
+                color: secondaryColor,
               ),
             ),
           ],
